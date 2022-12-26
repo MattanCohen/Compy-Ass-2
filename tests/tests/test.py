@@ -257,6 +257,19 @@ class TestAnd(ParserTestCase):
         self.assertEqual(fixed_res[0][0], True)
 
 
+class TestCond(ParserTestCase):
+    # def test_empty_cond(self):
+    #     s = "(cond)"
+    #     res = module.nt_sexpr(s, 0)
+    #     parsed = module.tag_parse(res.found)
+    #     print(parsed)
+
+    def test_cond_1(self):
+        s = "(cond (#t 1))"
+        res = module.nt_sexpr(s, 0)
+        print(res.found)
+        parsed = module.tag_parse(res.found)
+        print(parsed)
 
 
 if __name__ == "__main__":

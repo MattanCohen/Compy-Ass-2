@@ -583,7 +583,7 @@ module Tag_Parser : TAG_PARSER = struct
   let rec macro_expand_cond_ribs ribs =
     match ribs with
     | ScmNil -> ScmNil
-    | ScmPair (ScmPair (ScmSymbol "else", exprs), ribs) -> (ScmSymbol "begin", exprs)
+    | ScmPair (ScmPair (ScmSymbol "else", exprs), ribs) -> ScmPair((ScmSymbol "begin"), exprs)
     | ScmPair (ScmPair (expr,
                         ScmPair (ScmSymbol "=>",
                                  ScmPair (func, ScmNil))),
@@ -699,8 +699,6 @@ module Tag_Parser : TAG_PARSER = struct
            ScmLambda(unsymbolify_vars params, Opt opt, expr)
         | _ -> raise (X_syntax "invalid parameter list"))
     | ScmPair (ScmSymbol "let", ScmPair (ribs, exprs)) -> raise X_not_yet_implemented
-(*        let expr = tag_parse (ScmPair(ScmSymbol "begin", exprs)) in*)
-
     | ScmPair (ScmSymbol "let*", ScmPair (ScmNil, exprs)) -> raise X_not_yet_implemented (*ScmApplic (ScmLambda ([], Simple, exprs), [])*)
     | ScmPair (ScmSymbol "let*",
                ScmPair
