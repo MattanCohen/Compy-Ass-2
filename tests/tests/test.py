@@ -225,13 +225,36 @@ class TestNTList(ParserTestCase):
         self.assertEqual(res.index_from, 0)
         self.assertEqual(res.index_to, len(s))
 
-class TestTagParser(ParserTestCase):
-    def test_1(self):
-        s = "'(1, 2, 3)"
-        parsed = module.nt_sexpr(s, 0).found
-        res = module.tag_parse(parsed)
-        print(res)
+class TestAnd(ParserTestCase):
+    def test_and_1(self):
+        s = "(and 1 2 #f)"
+        res = module.nt_sexpr(s, 0)
+        fixed_res = module.tag_parse(res.found)
+        self.assertEqual(fixed_res[0][0], False)
 
+    def test_and_2(self):
+        s = "(and 1 2 3)"
+        res = module.nt_sexpr(s, 0)
+        fixed_res = module.tag_parse(res.found)
+        self.assertEqual(fixed_res[0][0], True)
+
+    def test_and_3(self):
+        s = "(and 1 2 #t)"
+        res = module.nt_sexpr(s, 0)
+        fixed_res = module.tag_parse(res.found)
+        self.assertEqual(fixed_res[0][0], True)
+
+    def test_and_4(self):
+        s = "(and 1)"
+        res = module.nt_sexpr(s, 0)
+        fixed_res = module.tag_parse(res.found)
+        self.assertEqual(fixed_res[0][0], True)
+
+    def test_and_5(self):
+        s = "(and)"
+        res = module.nt_sexpr(s, 0)
+        fixed_res = module.tag_parse(res.found)
+        self.assertEqual(fixed_res[0][0], True)
 
 
 

@@ -574,12 +574,11 @@ module Tag_Parser : TAG_PARSER = struct
     | sexpr -> sexpr;;
 
   let rec macro_expand_and_clauses expr =
-    match expr with
-    | [] -> ScmNil
+  match expr with
+    | [] -> ScmBoolean(true)
     | expr' :: exprs -> 
-                        ScmIf(tag_parse expr,
-                              macro_expand_and_clauses expr'::exprs,
-                              ScmConst (ScmBoolean false))
+      if (expr' != ScmBoolean(false)) then macro_expand_and_clauses exprs else (ScmBoolean false);;
+ 
 
   let rec macro_expand_cond_ribs ribs =
     match ribs with
@@ -716,7 +715,7 @@ module Tag_Parser : TAG_PARSER = struct
                         exprs)) -> raise X_not_yet_implemented
     | ScmPair (ScmSymbol "letrec", ScmPair (ribs, exprs)) ->
        raise X_not_yet_implemented
-    | ScmPair (ScmSymbol "and", ScmNil) -> ScmConst (ScmBoolean false)
+    | ScmPair (ScmSymbol "and", ScmNil) -> ScmConst (ScmBoolean true)
     | ScmPair (ScmSymbol "and", exprs) ->
        (match (scheme_list_to_ocaml exprs) with
         | expr :: exprs, ScmNil ->
