@@ -648,11 +648,7 @@ module Tag_Parser : TAG_PARSER = struct
     | ScmVoid | ScmBoolean _ | ScmChar _ | ScmString _ | ScmNumber _ ->
        ScmConst sexpr
     | ScmPair (ScmSymbol "quote", ScmPair (sexpr, ScmNil)) ->
-        let parsed: sexpr = sexpr in
-        let first = parsed in
-        let second = ScmNil in
-        let tuple: (sexpr * sexpr) = (first, second) in
-        ScmConst (ScmPair (sexpr, ScmNil))
+       ScmConst sexpr
     | ScmPair (ScmSymbol "quasiquote", ScmPair (sexpr, ScmNil)) ->
        tag_parse (macro_expand_qq sexpr)
     | ScmSymbol var ->
