@@ -645,6 +645,16 @@ module Tag_Parser : TAG_PARSER = struct
     | [] -> []
     | (var_name , value) :: rest -> [value] @ (let_ribs_to_vars rest);;
 
+
+  let throw_and_print toPrint = 
+    raise (X_syntax (string_of_sexpr(toPrint)));;
+    (* match toPrint with *)
+    (* | sexpr -> print_sexpr(toPrint);; *)
+    (* | sexpr -> raise (X_syntax (string_of_sexpr(toPrint)));; *)
+    (* | expr -> print_expr(toPrint);; *)
+    (* | expr -> raise (X_syntax (print_expr(toPrint)));; *)
+
+
   let rec tag_parse sexpr =
     match sexpr with
     | ScmVoid | ScmBoolean _ | ScmChar _ | ScmString _ | ScmNumber _ ->
@@ -702,6 +712,29 @@ module Tag_Parser : TAG_PARSER = struct
         | _ -> raise (X_syntax "invalid parameter list"))
         
     | ScmPair (ScmSymbol "let", ScmPair (ribs, exprs)) -> raise X_not_yet_implemented
+      (*
+      let ribs = (fst (scheme_list_to_ocaml ribs)) in
+      (* extract the name of params in ribs *)
+      (* let args = fst (scheme_list_to_ocaml ribs) in *)
+      let params = List.map (function | ScmPair(x, _) -> x) ribs in
+      throw_and_print (params)
+      *)
+      (* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *)
+      (*
+      (* extract the values of params in ribs *)
+      (* let values = fst (scheme_list_to_ocaml ribs) in *)
+      let values = List.map (function | ScmPair(_, y) -> y) ribs in
+      (* create a lambda expression *)
+      let lambda = ScmPair(ScmSymbol "lambda", ScmPair(params, exprs)) in
+      (* craete a pair to activate the lambda *)
+      let app = ScmPair(tag_parse(lambda), values) in
+      let app = tag_parse(app) in
+      throw_and_print (app)
+      *)
+      (* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *)
+
+
+
     | ScmPair (ScmSymbol "let*", ScmPair (ScmNil, exprs)) -> raise X_not_yet_implemented (*ScmApplic (ScmLambda ([], Simple, exprs), [])*)
     | ScmPair (ScmSymbol "let*",
                ScmPair
