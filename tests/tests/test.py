@@ -230,6 +230,7 @@ class TestAnd(ParserTestCase):
         s = "(and 1 2 #f)"
         res = module.nt_sexpr(s, 0)
         fixed_res = module.tag_parse(res.found)
+        print(fixed_res)
         self.assertEqual(fixed_res[0][0], False)
 
     def test_and_2(self):
