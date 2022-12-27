@@ -225,37 +225,37 @@ class TestNTList(ParserTestCase):
         self.assertEqual(res.index_from, 0)
         self.assertEqual(res.index_to, len(s))
 
-class TestAnd(ParserTestCase):
-    def test_and_1(self):
-        s = "(and 1 2 #f)"
-        res = module.nt_sexpr(s, 0)
-        fixed_res = module.tag_parse(res.found)
-        print(fixed_res)
-        self.assertEqual(fixed_res[0][0], False)
+# class TestAnd(ParserTestCase):
+#     def test_and_1(self):
+#         s = "(and 1 2 #f)"
+#         res = module.nt_sexpr(s, 0)
+#         fixed_res = module.tag_parse(res.found)
+#         print(fixed_res)
+#         self.assertEqual(fixed_res[0][0], False)
 
-    def test_and_2(self):
-        s = "(and 1 2 3)"
-        res = module.nt_sexpr(s, 0)
-        fixed_res = module.tag_parse(res.found)
-        self.assertEqual(fixed_res[0][0], True)
+#     def test_and_2(self):
+#         s = "(and 1 2 3)"
+#         res = module.nt_sexpr(s, 0)
+#         fixed_res = module.tag_parse(res.found)
+#         self.assertEqual(fixed_res[0][0], True)
 
-    def test_and_3(self):
-        s = "(and 1 2 #t)"
-        res = module.nt_sexpr(s, 0)
-        fixed_res = module.tag_parse(res.found)
-        self.assertEqual(fixed_res[0][0], True)
+#     def test_and_3(self):
+#         s = "(and 1 2 #t)"
+#         res = module.nt_sexpr(s, 0)
+#         fixed_res = module.tag_parse(res.found)
+#         self.assertEqual(fixed_res[0][0], True)
 
-    def test_and_4(self):
-        s = "(and 1)"
-        res = module.nt_sexpr(s, 0)
-        fixed_res = module.tag_parse(res.found)
-        self.assertEqual(fixed_res[0][0], True)
+#     def test_and_4(self):
+#         s = "(and 1)"
+#         res = module.nt_sexpr(s, 0)
+#         fixed_res = module.tag_parse(res.found)
+#         self.assertEqual(fixed_res[0][0], True)
 
-    def test_and_5(self):
-        s = "(and)"
-        res = module.nt_sexpr(s, 0)
-        fixed_res = module.tag_parse(res.found)
-        self.assertEqual(fixed_res[0][0], True)
+#     def test_and_5(self):
+#         s = "(and)"
+#         res = module.nt_sexpr(s, 0)
+#         fixed_res = module.tag_parse(res.found)
+#         self.assertEqual(fixed_res[0][0], True)
 
 
 class TestCond(ParserTestCase):
@@ -268,10 +268,55 @@ class TestCond(ParserTestCase):
     def test_cond_1(self):
         s = "(cond (#t 1))"
         res = module.nt_sexpr(s, 0)
-        print(res.found)
         parsed = module.tag_parse(res.found)
-        print(parsed)
+        supposed = 'ScmIf(ScmConst(ScmBoolean(True)),ScmConst(ScmNumber(ScmRational((1,1)))),ScmConst(ScmVoid))'
+        self.assertEqual(str(parsed), supposed)
+
+
+    def test_cond_2(self):
+        s = "(cond)"
+        res = module.nt_sexpr(s, 0)
+        parsed = module.tag_parse(res.found)
+        supposed = 'ScmConst(ScmVoid)'
+        self.assertEqual(str(parsed), supposed)
+
+    def test_cond_3(self):
+        s = "(cond (#t 1))"
+        res = module.nt_sexpr(s, 0)
+        parsed = module.tag_parse(res.found)
+        supposed = 'ScmIf(ScmConst(ScmBoolean(True)),ScmConst(ScmNumber(ScmRational((1,1)))),ScmConst(ScmVoid))'
+        self.assertEqual(str(parsed), supposed)
 
 
 if __name__ == "__main__":
     unittest.main()
+# ScmPair(
+#     (   ScmSymbol("cond"),
+#         ScmPair(
+#                 (   ScmPair(
+#                             ( PRED  ScmBoolean(True),
+#                               EXPRS  ScmPair(    
+#                                             (   ScmNumber(
+#                                                         ScmRational((1,1))
+#                                                 ),
+#                                                 ScmNil
+#                                             )
+#                                 )
+#                             )
+#                     ),
+#                     RIBS\remaining ScmNil
+#                 )
+#         )
+#     )
+# )
+
+# ScmPair (ScmSymbol "if",
+#                 ScmPair (ScmBoolean(True),
+#                          ScmPair
+#                            (ScmPair (ScmSymbol "begin", ScmPair(    
+#                                             (   ScmNumber(
+#                                                         ScmRational((1,1))
+#                                                 ),
+#                                                 ScmNil
+#                                             )),
+#                             ScmPair (ScmNil, ScmNil))))

@@ -584,7 +584,7 @@ module Tag_Parser : TAG_PARSER = struct
 
   let rec macro_expand_cond_ribs ribs =
     match ribs with
-    | ScmNil -> ScmNil
+    | ScmNil -> ScmVoid
     | ScmPair (ScmPair (ScmSymbol "else", exprs), ribs) -> ScmPair((ScmSymbol "begin"), exprs)
     | ScmPair (ScmPair (expr,
                         ScmPair (ScmSymbol "=>",
@@ -700,6 +700,7 @@ module Tag_Parser : TAG_PARSER = struct
         | params, ScmSymbol opt ->
            ScmLambda(unsymbolify_vars params, Opt opt, expr)
         | _ -> raise (X_syntax "invalid parameter list"))
+        
     | ScmPair (ScmSymbol "let", ScmPair (ribs, exprs)) -> raise X_not_yet_implemented
     | ScmPair (ScmSymbol "let*", ScmPair (ScmNil, exprs)) -> raise X_not_yet_implemented (*ScmApplic (ScmLambda ([], Simple, exprs), [])*)
     | ScmPair (ScmSymbol "let*",
@@ -735,7 +736,7 @@ module Tag_Parser : TAG_PARSER = struct
         | _ -> raise (X_syntax "malformed application"))
     | sexpr -> raise (X_syntax
                        (Printf.sprintf
-                          "Unknown form: \n%a\n"
+                          "Unknown form in tag parser: \n%a\n"
                           Reader.sprint_sexpr sexpr));;
 
   let rec sexpr_of_expr = function
