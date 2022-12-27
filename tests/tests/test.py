@@ -3,6 +3,9 @@ import os
 from ast import literal_eval
 import unittest
 
+from tests.ocaml_framework.scheme_types import *
+from dataclasses import is_dataclass
+
 sys.path.insert(0, os.getcwd())
 from tests.ocaml_framework.framework import compile_module
 from tests.ocaml_framework.compiler_data_types import ParsingResult, TagParserModule
@@ -11,14 +14,16 @@ module: TagParserModule = compile_module()
 X_no_match = module.PC.X_no_match
 
 
-class ParserTestCase(unittest.TestCase):
+
+
+class CompilerTestCase(unittest.TestCase):
     @staticmethod
     def is_parsing_result(x):
         return hasattr(x, 'index_from') and isinstance(x.index_from, int) and hasattr(x, 'index_to') and isinstance(
             x.index_to, int) and hasattr(x, 'found')
 
     def assertResultEquals(self, res: ParsingResult, index_from: int, index_to: int, found):
-        if not ParserTestCase.is_parsing_result(res):
+        if not CompilerTestCase.is_parsing_result(res):
             self.fail(f"variable: {res} is not a parsing result!")
         self.assertEqual(res.index_from, index_from)
         self.assertEqual(res.index_to, index_to)
@@ -120,7 +125,7 @@ class TestNTOptionalSign(unittest.TestCase):
         self.assertEqual(res.found, True)
 
 
-class TestNTFloat(ParserTestCase):
+class TestNTFloat(CompilerTestCase):
     def test_float_a_1(self):
         s = "-0124."
         self.assertResultEquals(module.nt_float(s, 0), 0, len(s), float(s))
@@ -154,7 +159,7 @@ class TestNTFloat(ParserTestCase):
         self.assertResultEquals(module.nt_float(s, 0), 0, len(s), float(s))
 
 
-class TestNTCharNamed(ParserTestCase):
+class TestNTCharNamed(CompilerTestCase):
     def test_nt_newline(self):
         self.assertResultEquals(module.nt_char_named("\n", 0), 0, 1, "\n")
 
@@ -178,13 +183,13 @@ class TestNTCharNamed(ParserTestCase):
         self.assertResultEquals(module.nt_char_named(s, 0), 0, 1, s)
 
 
-class TestNTSymbol(ParserTestCase):
+class TestNTSymbol(CompilerTestCase):
     def test_nt_symbol(self):
         s = "$asd"
         self.assertResultEquals(module.nt_symbol(s, 0), 0, len(s), s)
 
 
-class TestNTComment(ParserTestCase):
+class TestNTComment(CompilerTestCase):
     def test_nt_paired_comment_1(self):
         s = "{hellooo hiiiiii}"
         self.assertResultEquals(module.nt_paired_comment(s, 0), 0, len(s), None)
@@ -210,7 +215,7 @@ class TestNTComment(ParserTestCase):
         self.assertResultEquals(module.nt_sexpr_comment(s, 0), 0, len(s), None)
 
 
-class TestNTString(ParserTestCase):
+class TestNTString(CompilerTestCase):
     def test_nt_string_dynamic_part(self):
         s = '"~{(+ 1 2)}"'
         res = module.nt_sexpr(s, 0)
@@ -218,47 +223,98 @@ class TestNTString(ParserTestCase):
         self.assertEqual(res.index_to, len(s))
 
 
-class TestNTList(ParserTestCase):
+class TestNTList(CompilerTestCase):
     def test_nt_sexpr(self):
         s = "(1 2 3)"
         res = module.nt_sexpr(s, 0)
         self.assertEqual(res.index_from, 0)
         self.assertEqual(res.index_to, len(s))
 
-# class TestAnd(ParserTestCase):
-#     def test_and_1(self):
-#         s = "(and 1 2 #f)"
-#         res = module.nt_sexpr(s, 0)
-#         fixed_res = module.tag_parse(res.found)
-#         print(fixed_res)
-#         self.assertEqual(fixed_res[0][0], False)
 
-#     def test_and_2(self):
-#         s = "(and 1 2 3)"
-#         res = module.nt_sexpr(s, 0)
-#         fixed_res = module.tag_parse(res.found)
-#         self.assertEqual(fixed_res[0][0], True)
+class TestAnd(CompilerTestCase):
+    def test_and_1(self):
+        s = "(and 1 2 #f)"
+        res = module.nt_sexpr(s, 0)
+        fixed_res: ScmIf = module.tag_parse(res.found)
+        if_exp = validate_ocaml_tagged(fixed_res, ScmIf)
+        exp1 = if_exp.f0
 
-#     def test_and_3(self):
-#         s = "(and 1 2 #t)"
-#         res = module.nt_sexpr(s, 0)
-#         fixed_res = module.tag_parse(res.found)
-#         self.assertEqual(fixed_res[0][0], True)
+        exp1_numeric_value = scm_number_to_number(validate_scm_number(validate_scm_const(exp1).f0))
+        self.assertEqual(1, exp1_numeric_value)
 
-#     def test_and_4(self):
-#         s = "(and 1)"
-#         res = module.nt_sexpr(s, 0)
-#         fixed_res = module.tag_parse(res.found)
-#         self.assertEqual(fixed_res[0][0], True)
-
-#     def test_and_5(self):
-#         s = "(and)"
-#         res = module.nt_sexpr(s, 0)
-#         fixed_res = module.tag_parse(res.found)
-#         self.assertEqual(fixed_res[0][0], True)
+        exp2 = validate_ocaml_tagged(if_exp.f1, ScmIf)
+        self.assertEqual(2, scm_number_to_number(validate_scm_number(validate_scm_const(exp2.f0).f0)))
+        self.assertEqual(False, validate_scm_bool(validate_scm_const(exp2.f1).f0).f0)
 
 
-class TestCond(ParserTestCase):
+        exp3 = validate_scm_const(if_exp.f2)
+        self.assertEqual(False, validate_scm_bool(exp3.f0).f0)
+        #self.assertEqual(2, scm_number_to_number(validate_scm_number(validate_ocaml_tagged(validate_ocaml_tagged(fixed_res, ScmIf).f0, ScmConst).f0)))
+        #self.assertEqual(False, scheme_bool_to_bool(fixed_res[2][0]))
+
+    def test_and_2(self):
+        s = "(and 1 2 3)"
+        res = module.nt_sexpr(s, 0)
+        if_exp: ScmIf = validate_ocaml_tagged(module.tag_parse(res.found), ScmIf)
+
+        exp1 = if_exp.f0
+        exp1_numeric_value = scm_number_to_number(validate_scm_number(validate_scm_const(exp1).f0))
+        self.assertEqual(1, exp1_numeric_value)
+
+        exp2 = validate_ocaml_tagged(if_exp.f1, ScmIf)
+        self.assertEqual(2, scm_number_to_number(validate_scm_number(validate_scm_const(exp2.f0).f0)))
+        self.assertEqual(3, scm_number_to_number(validate_scm_number(validate_scm_const(exp2.f1).f0)))
+
+
+        exp3 = validate_scm_const(if_exp.f2)
+        self.assertEqual(False, validate_scm_bool(exp3.f0).f0)
+
+    def test_and_3(self):
+        s = "(and 1 2 #t)"
+        res = module.nt_sexpr(s, 0)
+        if_exp: ScmIf = validate_ocaml_tagged(module.tag_parse(res.found), ScmIf)
+
+        exp1 = if_exp.f0
+        exp1_numeric_value = scm_number_to_number(validate_scm_number(validate_scm_const(exp1).f0))
+        self.assertEqual(1, exp1_numeric_value)
+
+        exp2 = validate_ocaml_tagged(if_exp.f1, ScmIf)
+        self.assertEqual(2, scm_number_to_number(validate_scm_number(validate_scm_const(exp2.f0).f0)))
+        self.assertEqual(True, validate_scm_bool(validate_scm_const(exp2.f1).f0).f0)
+
+
+        exp3 = validate_scm_const(if_exp.f2)
+        self.assertEqual(False, validate_scm_bool(exp3.f0).f0)
+
+    def test_and_4(self):
+        s = "(and 1)"
+        res = module.nt_sexpr(s, 0)
+        if_exp: ScmIf = validate_ocaml_tagged(module.tag_parse(res.found), ScmIf)
+
+        exp1 = if_exp.f0
+        exp1_numeric_value = scm_number_to_number(validate_scm_number(validate_scm_const(exp1).f0))
+        self.assertEqual(1, exp1_numeric_value)
+
+        exp2 = validate_ocaml_tagged(if_exp.f1, ScmIf)
+        self.assertEqual(2, scm_number_to_number(validate_scm_number(validate_scm_const(exp2.f0).f0)))
+        self.assertEqual(True, validate_scm_bool(validate_scm_const(exp2.f1).f0).f0)
+
+        exp3 = validate_scm_const(if_exp.f2)
+        self.assertEqual(False, validate_scm_bool(exp3.f0).f0)
+
+    def test_and_5(self):
+        s = "(and)"
+        res = module.nt_sexpr(s, 0)
+        fixed_res = module.tag_parse(res.found)
+        self.assertEqual(fixed_res[0][0], True)
+
+
+class TestCond(CompilerTestCase):
+    # def test_empty_cond(self):
+    #     s = "(cond)"
+    #     res = module.nt_sexpr(s, 0)
+    #     parsed = module.tag_parse(res.found)
+    #     print(parsed)
 
     def test_cond_1(self):
         s = "(cond (#t 1))"
@@ -283,8 +339,8 @@ class TestCond(ParserTestCase):
         self.assertEqual(str(parsed), supposed)
 
 
-class TestLet(ParserTestCase):
-    
+class TestLet(CompilerTestCase):
+
     def test_let_1(self):
         # s = "((lambda (x y) (+ x y))2 4)"
         # s = "((lambda (x) x)2)"
@@ -295,39 +351,7 @@ class TestLet(ParserTestCase):
         print(res.found)
         parsed = module.tag_parse(res.found)
         print(parsed)
-        # supposed = 'ScmIf(ScmConst(ScmBoolean(True)),ScmConst(ScmNumber(ScmRational((1,1)))),ScmConst(ScmVoid))'
-        # self.assertEqual(str(parsed), supposed)
 
 
 if __name__ == "__main__":
     unittest.main()
-# ScmPair(
-#     (   ScmSymbol("cond"),
-#         ScmPair(
-#                 (   ScmPair(
-#                             ( PRED  ScmBoolean(True),
-#                               EXPRS  ScmPair(    
-#                                             (   ScmNumber(
-#                                                         ScmRational((1,1))
-#                                                 ),
-#                                                 ScmNil
-#                                             )
-#                                 )
-#                             )
-#                     ),
-#                     RIBS\remaining ScmNil
-#                 )
-#         )
-#     )
-# )
-
-# ScmPair (ScmSymbol "if",
-#                 ScmPair (ScmBoolean(True),
-#                          ScmPair
-#                            (ScmPair (ScmSymbol "begin", ScmPair(    
-#                                             (   ScmNumber(
-#                                                         ScmRational((1,1))
-#                                                 ),
-#                                                 ScmNil
-#                                             )),
-#                             ScmPair (ScmNil, ScmNil))))
