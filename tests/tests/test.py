@@ -259,11 +259,6 @@ class TestNTList(ParserTestCase):
 
 
 class TestCond(ParserTestCase):
-    # def test_empty_cond(self):
-    #     s = "(cond)"
-    #     res = module.nt_sexpr(s, 0)
-    #     parsed = module.tag_parse(res.found)
-    #     print(parsed)
 
     def test_cond_1(self):
         s = "(cond (#t 1))"
@@ -286,6 +281,22 @@ class TestCond(ParserTestCase):
         parsed = module.tag_parse(res.found)
         supposed = 'ScmIf(ScmConst(ScmBoolean(True)),ScmConst(ScmNumber(ScmRational((1,1)))),ScmConst(ScmVoid))'
         self.assertEqual(str(parsed), supposed)
+
+
+class TestLet(ParserTestCase):
+    
+    def test_let_1(self):
+        # s = "((lambda (x y) (+ x y))2 4)"
+        # s = "((lambda (x) x)2)"
+        s = "(let ((x 2) (y 4)) (+ x y))"
+        # s = "(let ((x 2)) x)"
+        res = module.nt_sexpr(s, 0)
+
+        print(res.found)
+        parsed = module.tag_parse(res.found)
+        print(parsed)
+        # supposed = 'ScmIf(ScmConst(ScmBoolean(True)),ScmConst(ScmNumber(ScmRational((1,1)))),ScmConst(ScmVoid))'
+        # self.assertEqual(str(parsed), supposed)
 
 
 if __name__ == "__main__":
