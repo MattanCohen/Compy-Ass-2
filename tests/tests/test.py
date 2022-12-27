@@ -3,10 +3,11 @@ import os
 from ast import literal_eval
 import unittest
 
-from tests.ocaml_framework.scheme_types import *
-from dataclasses import is_dataclass
+
 
 sys.path.insert(0, os.getcwd())
+from tests.ocaml_framework.scheme_types import *
+from dataclasses import is_dataclass
 from tests.ocaml_framework.framework import compile_module
 from tests.ocaml_framework.compiler_data_types import ParsingResult, TagParserModule
 
