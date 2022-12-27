@@ -654,8 +654,28 @@ module Tag_Parser : TAG_PARSER = struct
     (* | expr -> print_expr(toPrint);; *)
     (* | expr -> raise (X_syntax (print_expr(toPrint)));; *)
 
-
   let rec tag_parse sexpr =
+   
+    let rec macro_expand_let_ribs : sexpr -> sexpr = fun ribs ->
+      match ribs with  
+        | ScmNil -> ScmNil
+        | ScmPair(ScmPair(argName, argVal), exprs) -> ScmPair(argName, macro_expand_let_ribs exprs)
+        | _ -> raise (X_syntax "Bad let ribs")  in
+
+    let rec macro_expand_let_args : sexpr -> sexpr = fun ribs ->
+      match ribs with  
+      | ScmNil -> ScmNil
+      | ScmPair(ScmPair(argName, ScmPair(argb, ScmNil)), exprs) -> ScmPair(argb, macro_expand_let_args exprs)
+        | _ -> raise (X_syntax "Bad let ribs") in
+      
+    
+    let macro_expand_let ribs exprs =
+        let args = macro_expand_let_ribs ribs in
+        let modExprs = macro_expand_let_args ribs in
+        tag_parse (ScmPair(ScmPair(ScmSymbol "lambda", ScmPair(args, exprs)), modExprs)) in
+
+
+
     match sexpr with
     | ScmVoid | ScmBoolean _ | ScmChar _ | ScmString _ | ScmNumber _ ->
        ScmConst sexpr
@@ -711,36 +731,18 @@ module Tag_Parser : TAG_PARSER = struct
            ScmLambda(unsymbolify_vars params, Opt opt, expr)
         | _ -> raise (X_syntax "invalid parameter list"))
         
-    | ScmPair (ScmSymbol "let", ScmPair (ribs, exprs)) -> raise X_not_yet_implemented
-      (*
-      let ribs = (fst (scheme_list_to_ocaml ribs)) in
-      (* extract the name of params in ribs *)
-      (* let args = fst (scheme_list_to_ocaml ribs) in *)
-      let params = List.map (function | ScmPair(x, _) -> x) ribs in
-      throw_and_print (params)
-      *)
-      (* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *)
-      (*
-      (* extract the values of params in ribs *)
-      (* let values = fst (scheme_list_to_ocaml ribs) in *)
-      let values = List.map (function | ScmPair(_, y) -> y) ribs in
-      (* create a lambda expression *)
-      let lambda = ScmPair(ScmSymbol "lambda", ScmPair(params, exprs)) in
-      (* craete a pair to activate the lambda *)
-      let app = ScmPair(tag_parse(lambda), values) in
-      let app = tag_parse(app) in
-      throw_and_print (app)
-      *)
-      (* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! *)
-
-
-
-    | ScmPair (ScmSymbol "let*", ScmPair (ScmNil, exprs)) -> raise X_not_yet_implemented (*ScmApplic (ScmLambda ([], Simple, exprs), [])*)
+    | ScmPair (ScmSymbol "let", ScmPair (ribs, exprs)) -> macro_expand_let ribs exprs
+    | ScmPair (ScmSymbol "let*", ScmPair (ScmNil, exprs)) -> 
+      tag_parse ScmPair (ScmSymbol "let", ScmPair (ScmNil, exprs)) 
     | ScmPair (ScmSymbol "let*",
                ScmPair
                  (ScmPair
                     (ScmPair (var, ScmPair (value, ScmNil)), ScmNil),
-                  exprs)) -> raise X_not_yet_implemented
+                  exprs)) ->  ScmPair (ScmSymbol "let",
+                                        ScmPair
+                                          (ScmPair
+                                            (ScmPair (var, ScmPair (value, ScmNil)), ScmNil),
+                                          exprs))
     | ScmPair (ScmSymbol "let*",
                ScmPair (ScmPair (ScmPair (var,
                                           ScmPair (arg, ScmNil)),

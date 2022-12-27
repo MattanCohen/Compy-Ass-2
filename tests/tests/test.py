@@ -287,21 +287,21 @@ class TestAnd(CompilerTestCase):
         exp3 = validate_scm_const(if_exp.f2)
         self.assertEqual(False, validate_scm_bool(exp3.f0).f0)
 
-    def test_and_4(self):
-        s = "(and 1)"
-        res = module.nt_sexpr(s, 0)
-        if_exp: ScmIf = validate_ocaml_tagged(module.tag_parse(res.found), ScmIf)
+    # def test_and_4(self):
+    #     s = "(and 1)"
+    #     res = module.nt_sexpr(s, 0)
+    #     if_exp: ScmIf = validate_ocaml_tagged(module.tag_parse(res.found), ScmIf)
 
-        exp1 = if_exp.f0
-        exp1_numeric_value = scm_number_to_number(validate_scm_number(validate_scm_const(exp1).f0))
-        self.assertEqual(1, exp1_numeric_value)
+    #     exp1 = if_exp.f0
+    #     exp1_numeric_value = scm_number_to_number(validate_scm_number(validate_scm_const(exp1).f0))
+    #     self.assertEqual(1, exp1_numeric_value)
 
-        exp2 = validate_ocaml_tagged(if_exp.f1, ScmIf)
-        self.assertEqual(2, scm_number_to_number(validate_scm_number(validate_scm_const(exp2.f0).f0)))
-        self.assertEqual(True, validate_scm_bool(validate_scm_const(exp2.f1).f0).f0)
+    #     exp2 = validate_ocaml_tagged(if_exp.f1, ScmIf)
+    #     self.assertEqual(2, scm_number_to_number(validate_scm_number(validate_scm_const(exp2.f0).f0)))
+    #     self.assertEqual(True, validate_scm_bool(validate_scm_const(exp2.f1).f0).f0)
 
-        exp3 = validate_scm_const(if_exp.f2)
-        self.assertEqual(False, validate_scm_bool(exp3.f0).f0)
+    #     exp3 = validate_scm_const(if_exp.f2)
+    #     self.assertEqual(False, validate_scm_bool(exp3.f0).f0)
 
     def test_and_5(self):
         s = "(and)"
@@ -343,15 +343,20 @@ class TestCond(CompilerTestCase):
 class TestLet(CompilerTestCase):
 
     def test_let_1(self):
-        # s = "((lambda (x y) (+ x y))2 4)"
-        # s = "((lambda (x) x)2)"
-        s = "(let ((x 2) (y 4)) (+ x y))"
-        # s = "(let ((x 2)) x)"
-        res = module.nt_sexpr(s, 0)
+        lambdaExp = "((lambda (x y) (+ x y))2 4)"
+        # lambdaExp = "((lambda (x) x)2)"
+        letExp = "(let ((x 2) (y 4)) (+ x y))"
+        # letExp = "(let ((x 2)) x)"
+        lambdaRes = module.nt_sexpr(lambdaExp, 0)
+        letRes = module.nt_sexpr(letExp, 0)
 
-        print(res.found)
-        parsed = module.tag_parse(res.found)
-        print(parsed)
+        print(f"lambda res: {lambdaRes.found}")
+        print(f"let res: {letRes.found}")
+
+        parsedLambda = module.tag_parse(lambdaRes.found)
+        parsedLet = module.tag_parse(letRes.found)
+        print(f"lambda parsed: {parsedLambda}")
+        print(f"let parsed: {parsedLet}")
 
 
 if __name__ == "__main__":
