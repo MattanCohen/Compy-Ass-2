@@ -747,7 +747,8 @@ module Tag_Parser : TAG_PARSER = struct
                ScmPair (ScmPair (ScmPair (var,
                                           ScmPair (arg, ScmNil)),
                                  ribs),
-                        exprs)) -> raise X_not_yet_implemented
+                        exprs)) ->
+          tag_parse (macro_expand_let [ScmPair (var, ScmPair (arg, ScmNil))] ScmPair(ScmPair(ScmSymbol "let*", ScmPair(ribs, exprs)), ScmNil))
     | ScmPair (ScmSymbol "letrec", ScmPair (ribs, exprs)) ->
        raise X_not_yet_implemented
     | ScmPair (ScmSymbol "and", ScmNil) -> ScmConst (ScmBoolean true)
