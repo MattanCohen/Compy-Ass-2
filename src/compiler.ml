@@ -654,128 +654,8 @@ module Tag_Parser : TAG_PARSER = struct
     (* | expr -> print_expr(toPrint);; *)
     (* | expr -> raise (X_syntax (print_expr(toPrint)));; *)
 
-  let rec tag_parse sexpr =
-   
-    let rec macro_expand_let_ribs : sexpr -> sexpr = fun ribs ->
-      match ribs with  
-        | ScmNil -> ScmNil
-        | ScmPair(ScmPair(argName, argVal), exprs) -> ScmPair(argName, macro_expand_let_ribs exprs)
-        | _ -> raise (X_syntax "Bad let ribs")  in
 
-    let rec macro_expand_let_args : sexpr -> sexpr = fun ribs ->
-      match ribs with  
-      | ScmNil -> ScmNil
-      | ScmPair(ScmPair(argName, ScmPair(argb, ScmNil)), exprs) -> ScmPair(argb, macro_expand_let_args exprs)
-        | _ -> raise (X_syntax "Bad let ribs") in
-      
-    
-    let macro_expand_let ribs exprs =
-        let args = macro_expand_let_ribs ribs in
-        let modExprs = macro_expand_let_args ribs in
-        tag_parse (ScmPair(ScmPair(ScmSymbol "lambda", ScmPair(args, exprs)), modExprs)) in
-
-
-
-    match sexpr with
-    | ScmVoid | ScmBoolean _ | ScmChar _ | ScmString _ | ScmNumber _ ->
-       ScmConst sexpr
-    | ScmPair (ScmSymbol "quote", ScmPair (sexpr, ScmNil)) ->
-       ScmConst sexpr
-    | ScmPair (ScmSymbol "quasiquote", ScmPair (sexpr, ScmNil)) ->
-       tag_parse (macro_expand_qq sexpr)
-    | ScmSymbol var ->
-       if (is_reserved_word var)
-       then raise (X_syntax "Variable cannot be a reserved word")
-       else ScmVarGet(Var var)
-    | ScmPair (ScmSymbol "if",
-               ScmPair (test, ScmPair (dit, ScmNil))) ->
-       ScmIf(tag_parse test,
-             tag_parse dit,
-             tag_parse ScmVoid)
-    | ScmPair (ScmSymbol "if",
-               ScmPair (test, ScmPair (dit, ScmPair (dif, ScmNil)))) ->
-       ScmIf(tag_parse test,
-             tag_parse dit,
-             tag_parse dif)
-    | ScmPair (ScmSymbol "begin", ScmNil) -> ScmConst(ScmVoid)
-    | ScmPair (ScmSymbol "begin", ScmPair (sexpr, ScmNil)) ->
-       tag_parse sexpr
-    | ScmPair (ScmSymbol "begin", sexprs) ->
-       (match (scheme_list_to_ocaml sexprs) with
-        | (sexprs', ScmNil) -> ScmSeq(List.map tag_parse sexprs')
-        | _ -> raise (X_syntax "Improper sequence"))
-    | ScmPair (ScmSymbol "set!",
-               ScmPair (ScmSymbol var,
-                        ScmPair (expr, ScmNil))) ->
-       if (is_reserved_word var)
-       then raise (X_syntax "cannot assign a reserved word")
-       else ScmVarSet(Var var, tag_parse expr)
-    | ScmPair (ScmSymbol "define", ScmPair (ScmPair (var, params), exprs)) ->
-       tag_parse
-         (ScmPair (ScmSymbol "define",
-                   ScmPair (var,
-                            ScmPair (ScmPair (ScmSymbol "lambda",
-                                              ScmPair (params, exprs)),
-                                     ScmNil))))
-    | ScmPair (ScmSymbol "define",
-               ScmPair (ScmSymbol var,
-                        ScmPair (expr, ScmNil))) ->
-       if (is_reserved_word var)
-       then raise (X_syntax "cannot define a reserved word")
-       else ScmVarDef(Var var, tag_parse expr)
-    | ScmPair (ScmSymbol "lambda", ScmPair (params, exprs)) ->
-       let expr = tag_parse (ScmPair(ScmSymbol "begin", exprs)) in
-       (match (scheme_list_to_ocaml params) with
-        | params, ScmNil -> ScmLambda(unsymbolify_vars params, Simple, expr)
-        | params, ScmSymbol opt ->
-           ScmLambda(unsymbolify_vars params, Opt opt, expr)
-        | _ -> raise (X_syntax "invalid parameter list"))
-        
-    | ScmPair (ScmSymbol "let", ScmPair (ribs, exprs)) -> macro_expand_let ribs exprs
-    | ScmPair (ScmSymbol "let*", ScmPair (ScmNil, exprs)) -> 
-      tag_parse ScmPair (ScmSymbol "let", ScmPair (ScmNil, exprs)) 
-    | ScmPair (ScmSymbol "let*",
-               ScmPair
-                 (ScmPair
-                    (ScmPair (var, ScmPair (value, ScmNil)), ScmNil),
-                  exprs)) ->  ScmPair (ScmSymbol "let",
-                                        ScmPair
-                                          (ScmPair
-                                            (ScmPair (var, ScmPair (value, ScmNil)), ScmNil),
-                                          exprs))
-    | ScmPair (ScmSymbol "let*",
-               ScmPair (ScmPair (ScmPair (var,
-                                          ScmPair (arg, ScmNil)),
-                                 ribs),
-                        exprs)) ->
-          tag_parse (macro_expand_let [ScmPair (var, ScmPair (arg, ScmNil))] ScmPair(ScmPair(ScmSymbol "let*", ScmPair(ribs, exprs)), ScmNil))
-    | ScmPair (ScmSymbol "letrec", ScmPair (ribs, exprs)) ->
-       raise X_not_yet_implemented
-    | ScmPair (ScmSymbol "and", ScmNil) -> ScmConst (ScmBoolean true)
-    | ScmPair (ScmSymbol "and", exprs) ->
-      (match (scheme_list_to_ocaml exprs) with
-      | expr :: exprs, ScmNil ->
-         tag_parse (macro_expand_and_clauses expr exprs))
-    | ScmPair (ScmSymbol "cond", ribs) ->
-       tag_parse (macro_expand_cond_ribs ribs)
-    | ScmPair (proc, args) ->
-       let proc =
-         (match proc with
-          | ScmSymbol var ->
-             if (is_reserved_word var)
-             then raise (X_syntax "reserved word in proc position")
-             else proc
-          | proc -> proc) in
-       (match (scheme_list_to_ocaml args) with
-        | args, ScmNil ->
-           ScmApplic (tag_parse proc, List.map tag_parse args)
-        | _ -> raise (X_syntax "malformed application"))
-    | sexpr -> raise (X_syntax
-                       (Printf.sprintf
-                          "Unknown form in tag parser: \n%a\n"
-                          Reader.sprint_sexpr sexpr));;
-
-  let rec sexpr_of_expr = function
+    let rec sexpr_of_expr = function
     | ScmConst(ScmVoid) -> ScmVoid
     | ScmConst((ScmBoolean _) as sexpr) -> sexpr
     | ScmConst((ScmChar _) as sexpr) -> sexpr
@@ -860,7 +740,160 @@ module Tag_Parser : TAG_PARSER = struct
        ScmPair (proc, args)
     | _ -> raise (X_syntax "Unknown form");;
 
-  let string_of_expr expr =
+
+
+  let rec tag_parse sexpr =
+   
+    let rec macro_expand_let_ribs : sexpr -> sexpr = fun ribs ->
+      match ribs with  
+        | ScmNil -> ScmNil
+        | ScmPair(ScmPair(argName, argVal), exprs) -> ScmPair(argName, macro_expand_let_ribs exprs)
+        | _ -> raise (X_syntax "Bad let ribs")  in
+
+(*          
+    let newRib = ScmPair (ScmSymbol("x"), 
+                          ScmPair ( ScmNumber(ScmRational(2,1), ScmNil) , ScmNil) ) *)
+
+    let rec macro_expand_let_args : sexpr -> sexpr = fun ribs ->
+      match ribs with  
+      | ScmNil -> ScmNil
+      | ScmPair(ScmPair(argName, ScmPair(argb, ScmNil)), exprs) -> ScmPair(argb, macro_expand_let_args exprs)
+        | _ -> raise (X_syntax "Bad let ribs args") in
+      
+    
+    let macro_expand_let ribs exprs =
+        let args = macro_expand_let_ribs ribs in
+        let modExprs = macro_expand_let_args ribs in
+        tag_parse (ScmPair(ScmPair(ScmSymbol "lambda", ScmPair(args, exprs)), modExprs)) in
+(* 
+   
+
+      ScmPair (ScmPair (ScmPair (var,
+                                ScmPair (arg,
+                                          ScmNil)),
+                        ribs),
+              exprs)) ->
+                let letStar = ScmPair(ScmSymbol "let*", ScmPair(ribs, exprs)) in
+                let letStar = tag_parse letStar in
+                let letStar = sexpr_of_expr letStar in
+                let arg = ScmPair(arg, ScmNil) in
+                let newRib = ScmPair(ScmPair (var, arg) ,ScmNil) in 
+*)
+
+
+    match sexpr with
+    | ScmVoid | ScmBoolean _ | ScmChar _ | ScmString _ | ScmNumber _ ->
+       ScmConst sexpr
+    | ScmPair (ScmSymbol "quote", ScmPair (sexpr, ScmNil)) ->
+       ScmConst sexpr
+    | ScmPair (ScmSymbol "quasiquote", ScmPair (sexpr, ScmNil)) ->
+       tag_parse (macro_expand_qq sexpr)
+    | ScmSymbol var ->
+       if (is_reserved_word var)
+       then raise (X_syntax "Variable cannot be a reserved word")
+       else ScmVarGet(Var var)
+    | ScmPair (ScmSymbol "if",
+               ScmPair (test, ScmPair (dit, ScmNil))) ->
+       ScmIf(tag_parse test,
+             tag_parse dit,
+             tag_parse ScmVoid)
+    | ScmPair (ScmSymbol "if",
+               ScmPair (test, ScmPair (dit, ScmPair (dif, ScmNil)))) ->
+       ScmIf(tag_parse test,
+             tag_parse dit,
+             tag_parse dif)
+    | ScmPair (ScmSymbol "begin", ScmNil) -> ScmConst(ScmVoid)
+    | ScmPair (ScmSymbol "begin", ScmPair (sexpr, ScmNil)) ->
+       tag_parse sexpr
+    | ScmPair (ScmSymbol "begin", sexprs) ->
+       (match (scheme_list_to_ocaml sexprs) with
+        | (sexprs', ScmNil) -> ScmSeq(List.map tag_parse sexprs')
+        | _ -> raise (X_syntax "Improper sequence"))
+    | ScmPair (ScmSymbol "set!",
+               ScmPair (ScmSymbol var,
+                        ScmPair (expr, ScmNil))) ->
+       if (is_reserved_word var)
+       then raise (X_syntax "cannot assign a reserved word")
+       else ScmVarSet(Var var, tag_parse expr)
+    | ScmPair (ScmSymbol "define", ScmPair (ScmPair (var, params), exprs)) ->
+       tag_parse
+         (ScmPair (ScmSymbol "define",
+                   ScmPair (var,
+                            ScmPair (ScmPair (ScmSymbol "lambda",
+                                              ScmPair (params, exprs)),
+                                     ScmNil))))
+    | ScmPair (ScmSymbol "define",
+               ScmPair (ScmSymbol var,
+                        ScmPair (expr, ScmNil))) ->
+       if (is_reserved_word var)
+       then raise (X_syntax "cannot define a reserved word")
+       else ScmVarDef(Var var, tag_parse expr)
+    | ScmPair (ScmSymbol "lambda", ScmPair (params, exprs)) ->
+       let expr = tag_parse (ScmPair(ScmSymbol "begin", exprs)) in
+       (match (scheme_list_to_ocaml params) with
+        | params, ScmNil -> ScmLambda(unsymbolify_vars params, Simple, expr)
+        | params, ScmSymbol opt ->
+           ScmLambda(unsymbolify_vars params, Opt opt, expr)
+        | _ -> raise (X_syntax "invalid parameter list"))
+        
+    | ScmPair (ScmSymbol "let", ScmPair (ribs, exprs)) -> macro_expand_let ribs exprs
+    | ScmPair (ScmSymbol "let*", ScmPair (ScmNil, exprs)) ->  macro_expand_let ScmNil exprs
+    | ScmPair (ScmSymbol "let*",
+               ScmPair
+                 (ScmPair
+                    (ScmPair (var, ScmPair (value, ScmNil)), ScmNil),
+                  exprs)) ->
+                    let ribs = ScmPair(var, ScmPair (value, ScmNil)) in
+                    let ribs = ScmPair(ribs, ScmNil) in
+                    macro_expand_let ribs exprs
+    | ScmPair (ScmSymbol "let*",
+               ScmPair (ScmPair (ScmPair (var,
+                                          ScmPair (arg,
+                                                   ScmNil)),
+                                 ribs),
+                        exprs)) ->
+                          let letStar = ScmPair(ScmSymbol "let*", ScmPair(ribs, exprs)) in
+                          let letStar = tag_parse letStar in
+                          
+                          let letStar = sexpr_of_expr letStar in
+                          throw_and_print letStar
+                          (* let arg = ScmPair(arg, ScmNil) in
+                          let newRib = ScmPair(ScmPair (var, arg) ,ScmNil) in 
+                          macro_expand_let newRib letStar
+                           *)
+                          (* throw_and_print ribs *)
+
+
+(*tag_parse (macro_expand_let [ScmPair (var, ScmPair (arg, ScmNil))] ScmPair(ScmPair(ScmSymbol "let*", ScmPair(ribs, exprs)), ScmNil)) *)
+    | ScmPair (ScmSymbol "letrec", ScmPair (ribs, exprs)) ->
+       raise X_not_yet_implemented
+    | ScmPair (ScmSymbol "and", ScmNil) -> ScmConst (ScmBoolean true)
+    | ScmPair (ScmSymbol "and", exprs) ->
+      (match (scheme_list_to_ocaml exprs) with
+      | expr :: exprs, ScmNil ->
+         tag_parse (macro_expand_and_clauses expr exprs))
+    | ScmPair (ScmSymbol "cond", ribs) ->
+       tag_parse (macro_expand_cond_ribs ribs)
+    | ScmPair (proc, args) ->
+       let proc =
+         (match proc with
+          | ScmSymbol var ->
+             if (is_reserved_word var)
+             then raise (X_syntax "reserved word in proc position")
+             else proc
+          | proc -> proc) in
+       (match (scheme_list_to_ocaml args) with
+        | args, ScmNil ->
+           ScmApplic (tag_parse proc, List.map tag_parse args)
+        | _ -> raise (X_syntax "malformed application"))
+    | sexpr -> raise (X_syntax
+                       (Printf.sprintf
+                          "Unknown form in tag parser: \n%a\n"
+                          Reader.sprint_sexpr sexpr));;
+
+  
+  
+    let string_of_expr expr =
     Printf.sprintf "%a" sprint_sexpr (sexpr_of_expr expr);;
 
   let print_expr chan expr =

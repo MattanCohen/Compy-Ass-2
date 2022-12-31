@@ -356,8 +356,23 @@ class TestLet(CompilerTestCase):
         parsedLambda = module.tag_parse(lambdaRes.found)
         parsedLet = module.tag_parse(letRes.found)
         print(f"lambda parsed: {parsedLambda}")
-        print(f"let parsed: {parsedLet}")
+        print(f"let parsed:    {parsedLet}")
 
+    def test_letstar_1(self):
+        lambdaExp = "((lambda (x) ((lambda (y) x) 3)) 2)"
+        # lambdaExp = "((lambda (x) x)2)"
+        letExp = "(let* ((x 2) (y 4)) x)"
+        # letExp = "(let ((x 2)) x)"
+        lambdaRes = module.nt_sexpr(lambdaExp, 0)
+        letRes = module.nt_sexpr(letExp, 0)
+
+        # print(f"lambda res: {lambdaRes.found}")
+        # print(f"let res: {letRes.found}")
+
+        parsedLambda = module.tag_parse(lambdaRes.found)
+        parsedLet = module.tag_parse(letRes.found)
+        # print(f"lambda parsed: {parsedLambda}")
+        # print(f"let parsed: {parsedLet}")
 
 if __name__ == "__main__":
     unittest.main()
