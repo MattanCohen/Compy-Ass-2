@@ -750,10 +750,6 @@ module Tag_Parser : TAG_PARSER = struct
         | ScmPair(ScmPair(argName, argVal), exprs) -> ScmPair(argName, macro_expand_let_ribs exprs)
         | _ -> raise (X_syntax "Bad let ribs")  in
 
-(*          
-    let newRib = ScmPair (ScmSymbol("x"), 
-                          ScmPair ( ScmNumber(ScmRational(2,1), ScmNil) , ScmNil) ) *)
-
     let rec macro_expand_let_args : sexpr -> sexpr = fun ribs ->
       match ribs with  
       | ScmNil -> ScmNil
@@ -765,20 +761,36 @@ module Tag_Parser : TAG_PARSER = struct
         let args = macro_expand_let_ribs ribs in
         let modExprs = macro_expand_let_args ribs in
         tag_parse (ScmPair(ScmPair(ScmSymbol "lambda", ScmPair(args, exprs)), modExprs)) in
-(* 
-   
 
-      ScmPair (ScmPair (ScmPair (var,
-                                ScmPair (arg,
-                                          ScmNil)),
-                        ribs),
-              exprs)) ->
-                let letStar = ScmPair(ScmSymbol "let*", ScmPair(ribs, exprs)) in
-                let letStar = tag_parse letStar in
-                let letStar = sexpr_of_expr letStar in
-                let arg = ScmPair(arg, ScmNil) in
-                let newRib = ScmPair(ScmPair (var, arg) ,ScmNil) in 
-*)
+        
+  let rec macro_expand_let_star vars body =
+    let rec handle_pairs = function
+        | [] -> (ScmNil, ScmNil)
+        | ScmPair(id, ScmPair(expr, ScmNil))::rest ->
+          let (r_id, r_expr) = handle_pairs rest in
+          (ScmPair(id,r_id), ScmPair(expr,r_expr))
+        | _ -> raise (X_syntax "malformed let expr") in
+      let v_id, v_expr = handle_pairs vars in
+      ScmPair
+      (ScmPair
+        (ScmSymbol "lambda",
+        ScmPair (v_id, body)),
+      v_expr) in
+
+
+  
+  let rec macro_expand_letrec vars body =
+      let whatever = ScmPair (ScmSymbol "quote", ScmPair (ScmSymbol "w\e", ScmNil)) in
+        let rec fix_let_rec = function
+          | [] -> (ScmNil, body)
+          | ScmPair(id, sexpr)::rest ->
+            let (r_init, r_set) = fix_let_rec rest in
+            (ScmPair(ScmPair(id, ScmPair(whatever, ScmNil)), r_init),
+            ScmPair(ScmPair(ScmSymbol("set!"),
+                            ScmPair(id, sexpr)), r_set))
+          | _ -> raise (X_syntax "malformed let expr") in
+        let inits, sets = fix_let_rec vars in
+        ScmPair (ScmSymbol "let", ScmPair (inits, sets)) in
 
 
     match sexpr with
@@ -848,25 +860,21 @@ module Tag_Parser : TAG_PARSER = struct
                     macro_expand_let ribs exprs
     | ScmPair (ScmSymbol "let*",
                ScmPair (ScmPair (ScmPair (var,
-                                          ScmPair (arg,
-                                                   ScmNil)),
+                                          ScmPair (arg, ScmNil)),
                                  ribs),
                         exprs)) ->
-                          let letStar = ScmPair(ScmSymbol "let*", ScmPair(ribs, exprs)) in
-                          let letStar = tag_parse letStar in
-                          
-                          let letStar = sexpr_of_expr letStar in
-                          throw_and_print letStar
-                          (* let arg = ScmPair(arg, ScmNil) in
-                          let newRib = ScmPair(ScmPair (var, arg) ,ScmNil) in 
-                          macro_expand_let newRib letStar
-                           *)
-                          (* throw_and_print ribs *)
+          let rest = ScmPair(ScmPair(ScmSymbol "let*", ScmPair(ribs, exprs)), ScmNil) in
+          tag_parse (macro_expand_let_star [ScmPair (var, ScmPair (arg, ScmNil))] rest)
+    
+    | ScmPair (ScmSymbol "letrec", ScmNil) ->
+            raise (X_syntax "invalid letrec param list")
+    
+    | ScmPair (ScmSymbol "letrec", ScmPair (vars, body)) ->
+            (match (scheme_list_to_ocaml vars) with
+            | vars, ScmNil ->
+                tag_parse (macro_expand_letrec vars body)
+            | _ -> raise (X_syntax "invalid letrec param list"))
 
-
-(*tag_parse (macro_expand_let [ScmPair (var, ScmPair (arg, ScmNil))] ScmPair(ScmPair(ScmSymbol "let*", ScmPair(ribs, exprs)), ScmNil)) *)
-    | ScmPair (ScmSymbol "letrec", ScmPair (ribs, exprs)) ->
-       raise X_not_yet_implemented
     | ScmPair (ScmSymbol "and", ScmNil) -> ScmConst (ScmBoolean true)
     | ScmPair (ScmSymbol "and", exprs) ->
       (match (scheme_list_to_ocaml exprs) with

@@ -341,38 +341,136 @@ class TestCond(CompilerTestCase):
 
 
 class TestLet(CompilerTestCase):
-
-    def test_let_1(self):
-        lambdaExp = "((lambda (x y) (+ x y))2 4)"
-        # lambdaExp = "((lambda (x) x)2)"
-        letExp = "(let ((x 2) (y 4)) (+ x y))"
-        # letExp = "(let ((x 2)) x)"
+    
+    def test_let_complicated_1(self):
+        lambdaExp = "((lambda (x) (lambda (y) y)) 5)"
+        letExp = "(let ((x 5)) (lambda (y) y))"
         lambdaRes = module.nt_sexpr(lambdaExp, 0)
         letRes = module.nt_sexpr(letExp, 0)
 
-        print(f"lambda res: {lambdaRes.found}")
-        print(f"let res: {letRes.found}")
 
         parsedLambda = module.tag_parse(lambdaRes.found)
         parsedLet = module.tag_parse(letRes.found)
-        print(f"lambda parsed: {parsedLambda}")
-        print(f"let parsed:    {parsedLet}")
+
+        debugLet = False; 
+        if (debugLet):
+            print(f"test let complicated 1 {letExp} = {lambdaExp}")
+            print(f"lambda res: {lambdaRes.found}")
+            print(f"let res:    {letRes.found}")
+            print(f"lambda parsed: {parsedLambda}")
+            print(f"let parsed:    {parsedLet}")
+            print("")
+
+        self.assertEqual(str(parsedLambda), str(parsedLet))
+    
+    def test_let_complicated_2(self):
+        lambdaExp = "((lambda (x) ((lambda (y) y) 5) ) 2)"
+        letExp = "(let ((x 2)) (let ((y 5)) y))"
+        lambdaRes = module.nt_sexpr(lambdaExp, 0)
+        letRes = module.nt_sexpr(letExp, 0)
+
+
+        parsedLambda = module.tag_parse(lambdaRes.found)
+        parsedLet = module.tag_parse(letRes.found)
+
+        debugLet = False; 
+        if (debugLet):
+            print(f"test let complicated 2 {letExp} = {lambdaExp}")
+            print(f"lambda res: {lambdaRes.found}")
+            print(f"let res:    {letRes.found}")
+            print(f"lambda parsed: {parsedLambda}")
+            print(f"let parsed:    {parsedLet}")
+            print("")
+
+        self.assertEqual(str(parsedLambda), str(parsedLet))
+
 
     def test_letstar_1(self):
-        lambdaExp = "((lambda (x) ((lambda (y) x) 3)) 2)"
-        # lambdaExp = "((lambda (x) x)2)"
-        letExp = "(let* ((x 2) (y 4)) x)"
-        # letExp = "(let ((x 2)) x)"
+        lambdaExp = "((lambda (x) x) 2)"
+        letExp = "(let* ((x 2)) x)"
         lambdaRes = module.nt_sexpr(lambdaExp, 0)
         letRes = module.nt_sexpr(letExp, 0)
 
-        # print(f"lambda res: {lambdaRes.found}")
-        # print(f"let res: {letRes.found}")
+        
 
         parsedLambda = module.tag_parse(lambdaRes.found)
         parsedLet = module.tag_parse(letRes.found)
-        # print(f"lambda parsed: {parsedLambda}")
-        # print(f"let parsed: {parsedLet}")
+        self.assertEqual(str(parsedLambda), str(parsedLet))
+
+        
+        debugLet = False; 
+        if (debugLet):
+            print(f"test letstar 1: (let* ((x 2)) x) = ((lambda (x) x) 2)")
+            print(f"lambda res: {lambdaRes.found}")
+            print(f"let res:    {letRes.found}")
+            print(f"lambda parsed: {parsedLambda}")
+            print(f"let parsed:    {parsedLet}")
+            print("")
+        
+    def test_letstar_2(self):
+        lambdaExp = "((lambda () 2))"
+        letExp = "(let* () 2)"
+        lambdaRes = module.nt_sexpr(lambdaExp, 0)
+        letRes = module.nt_sexpr(letExp, 0)
+
+
+        parsedLambda = module.tag_parse(lambdaRes.found)
+        parsedLet = module.tag_parse(letRes.found)
+
+        debugLet = False; 
+        if (debugLet):
+            print(f"test letstar 2 {letExp} = {lambdaExp}")
+            print(f"lambda res: {lambdaRes.found}")
+            print(f"let res:    {letRes.found}")
+            print(f"lambda parsed: {parsedLambda}")
+            print(f"let parsed:    {parsedLet}")
+            print("")
+
+        self.assertEqual(str(parsedLambda), str(parsedLet))
+        
+
+    def test_letstar_3(self):
+        lambdaExp = "(let ((x 2)) (let ((y 4)) x))"
+        letExp = "(let* ((x 2) (y 4)) x)"
+        lambdaRes = module.nt_sexpr(lambdaExp, 0)
+        letRes = module.nt_sexpr(letExp, 0)
+
+
+        parsedLambda = module.tag_parse(lambdaRes.found)
+        parsedLet = module.tag_parse(letRes.found)
+
+        
+        debugLet = False; 
+        if (debugLet):
+            print(f"test letstar 3 {letExp} = {lambdaExp}")
+            print(f"lambda res: {lambdaRes.found}")
+            print(f"let res:    {letRes.found}")
+            print(f"lambda parsed: {parsedLambda}")
+            print(f"let parsed:    {parsedLet}")
+            print("")
+
+        self.assertEqual(str(parsedLambda), str(parsedLet))
+
+        
+
+    def test_letrec(self):
+        letExp = "(letrec ((x 2) (y x)) y)"
+        letRes = module.nt_sexpr(letExp, 0)
+
+
+        parsedLet = module.tag_parse(letRes.found)
+
+        
+        debugLet = False; 
+        if (debugLet):
+            print(f"let res:    {letRes.found}")
+            print(f"let parsed:    {parsedLet}")
+            print("")
+
+
+        
+
+
 
 if __name__ == "__main__":
     unittest.main()
