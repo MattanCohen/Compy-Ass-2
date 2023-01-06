@@ -11,7 +11,7 @@ from dataclasses import is_dataclass
 from tests.ocaml_framework.framework import compile_module
 from tests.ocaml_framework.compiler_data_types import ParsingResult, TagParserModule
 
-module: TagParserModule = compile_module()
+module = compile_module()
 X_no_match = module.PC.X_no_match
 
 

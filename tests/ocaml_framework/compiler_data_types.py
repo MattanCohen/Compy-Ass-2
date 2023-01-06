@@ -51,3 +51,11 @@ class ReaderModule:
 class TagParserModule:
     tag_parse: Callable[[SExp], SExp]
     macro_expand_cond_ribs: Callable[[SExp], SExp]
+
+@dataclass
+class SemanticAnalysisModule:
+    pass
+
+@dataclass
+class CodeGenerationModule:
+    pass

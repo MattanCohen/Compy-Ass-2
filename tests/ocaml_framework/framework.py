@@ -26,11 +26,11 @@ def read_all_files() -> str:
     return "\n".join((pathlib.Path(filename).read_text() for filename in OCAML_FILES_IN_COMPILING_ORDER))
 
 
+MODULES_TO_FIX = ['Reader', 'Tag_Parser', 'Semantic_Analysis', 'Code_Generation']
 def fix_line(line: str):
-    if line.find("module Reader") == 0:
-        return "module Reader = struct"
-    if line.find("module Tag_Parser") == 0:
-        return "module Tag_Parser = struct"
+    for mod in MODULES_TO_FIX:
+        if line.find(f"module {mod}") == 0:
+            return "module {mod} = struct"
 
     return line
 
@@ -46,9 +46,14 @@ def fix_for_tests(content: str) -> str:
 def add_extern_attributes(content: str):
     for attribute in ReaderModule.__annotations__:
         if attribute not in ATTRIBUTES_OUTSIDE_OF_READER:
-            content += f"\n let {attribute} = Reader.{attribute};;"
+            content += f"\nlet {attribute} = Reader.{attribute};;"
     for attribute in TagParserModule.__annotations__:
         content += f"\nlet {attribute} = Tag_Parser.{attribute};;"
+    for attribute in SemanticAnalysisModule.__annotations__:
+        content += f"\nlet ${attribute} = Semantic_Analysis.{attribute};;"
+    for attribute in CodeGenerationModule.__annotations__:
+        content += f"\nlet ${attribute} = Code_Generation.${attribute};;"
+        
     return content
 
 
@@ -58,5 +63,5 @@ def compile_and_save(content: str):
     return ocaml.compile(content)
 
 
-compile_module: Callable[[], TagParserModule] = pipe(compile_and_save, add_extern_attributes, fix_for_tests,
+compile_module: Callable[[], any] = pipe(compile_and_save, add_extern_attributes, fix_for_tests,
                                                   read_all_files)
