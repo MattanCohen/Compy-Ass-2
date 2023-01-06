@@ -54,8 +54,17 @@ class TagParserModule:
 
 @dataclass
 class SemanticAnalysisModule:
+    # TODO: TESTS!!!
     pass
+    
 
 @dataclass
 class CodeGenerationModule:
-    pass
+    remove_duplicates:          Callable[..., any]
+    collect_constants:          Callable[..., any]
+    add_sub_constants:          Callable[..., any]
+    search_constant_address:    Callable[..., any]
+    collect_free_vars:          Callable[..., any]
+    code_gen:                   Callable[..., any]
+
+
