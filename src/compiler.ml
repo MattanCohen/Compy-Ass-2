@@ -990,7 +990,7 @@ module Semantic_Analysis : SEMANTIC_ANALYSIS = struct
       | ScmVarGet (Var str) -> ScmVarGet' (tag_lexical_address_for_var str params env)
       | ScmIf (test, dit, dif) ->  ScmIf' (run test params env, run dit params env,run dif params env)
       | ScmSeq exprs ->  ScmSeq' (List.map (fun expr -> run expr params env) exprs)
-      | ScmOr exprs -> raise ScmOr' (List.map (fun expr -> run expr params env) exprs)
+      | ScmOr exprs -> ScmOr' (List.map (fun expr -> run expr params env) exprs)
       | ScmVarSet(Var v, expr) -> ScmVarSet' ((tag_lexical_address_for_var v params env),
           (run expr params env))
       (* this code does not [yet?] support nested define-expressions *)
@@ -1012,9 +1012,9 @@ module Semantic_Analysis : SEMANTIC_ANALYSIS = struct
       | (ScmConst' _) as orig -> orig
       | (ScmVarGet' _) as orig -> orig
       | ScmIf' (test, dit, dif) -> ScmIf' (run false test, run in_tail dit, run in_tail dif)
-      | ScmSeq' [] -> []
+      | ScmSeq' [] -> ScmSeq' []
       | ScmSeq' (expr :: exprs) -> ScmSeq' (runl in_tail expr exprs)
-      | ScmOr' [] -> []
+      | ScmOr' [] ->  ScmOr' []
       | ScmOr' (expr :: exprs) -> ScmOr' (runl in_tail expr exprs)
       | ScmVarSet' (var', expr') -> ScmVarSet' (var', run false expr')
       | ScmVarDef' (var', expr') -> ScmVarDef' (var', run false expr')
@@ -1110,14 +1110,14 @@ module Semantic_Analysis : SEMANTIC_ANALYSIS = struct
 
   let should_box_var name expr params =
     let read, write = find_reads_and_writes name expr params in
-    let same_pair = match (cross_product read write) with
+    let same_pair = List.map (fun pair -> match pair with
     | ((Var' (_, Param _), _), (Var' (_, Param _), _)) -> true
     | ((Var' (_, Param _), _), _) | (_, (Var' (_, Param _), _)) -> false
     | ((Var' (_, Bound (rm,_)), re),
       (Var' (_, Bound (wm,_)), we)) ->
         (List.nth re rm) == (List.nth we wm)
-    | _ -> raise (X_this_should_not_happen "Should't happen!") in
-    List.exists (fun x -> x == false) same_pair;;
+    | _ -> raise (X_this_should_not_happen "Should't happen!")) (cross_product read write) in
+    List.exists (fun x -> x == false) same_pair
   let box_sets_and_gets name body =
     let rec run expr =
       match expr with
@@ -1206,7 +1206,7 @@ module Semantic_Analysis : SEMANTIC_ANALYSIS = struct
           (fun body name -> box_sets_and_gets name body)
           (auto_box expr')
           box_these in
-      let new_sets = make_sets box_these params' in
+      let new_sets = make_sets box_these params in
       let new_body = match box_these, new_body with
         | [], _ -> new_body
         | _, ScmSeq' exprs -> ScmSeq' (new_sets @ exprs)
@@ -1387,9 +1387,9 @@ module Code_Generation : CODE_GENERATION= struct
     | [] -> []
     | s -> run (s, n, (fun s -> s));;
 
-  let remove_duplicates = raise X_not_yet_implemented;;
+  let remove_duplicates = fun x -> raise X_not_yet_implemented;;
 
-  let collect_constants = raise X_not_yet_implemented;;
+  let collect_constants = fun x -> raise X_not_yet_implemented;;
 
   let add_sub_constants =
     let rec run sexpr = match sexpr with
@@ -1413,8 +1413,9 @@ module Code_Generation : CODE_GENERATION= struct
     | QuadFloat of float
     | ConstPtr of int;;
 
-  let search_constant_address = raise X_not_yet_implemented;;
+  let search_constant_address = fun x -> raise X_not_yet_implemented;;
 
+  let string_of_sexpr = Reader.string_of_sexpr;;
   let const_repr sexpr loc table = match sexpr with
     | ScmVoid -> ([RTTI "T_void"], 1)
     | ScmNil -> ([RTTI "T_nil"], 1)

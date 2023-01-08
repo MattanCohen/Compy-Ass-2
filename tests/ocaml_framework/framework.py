@@ -30,7 +30,7 @@ MODULES_TO_FIX = ['Reader', 'Tag_Parser', 'Semantic_Analysis', 'Code_Generation'
 def fix_line(line: str):
     for mod in MODULES_TO_FIX:
         if line.find(f"module {mod}") == 0:
-            return "module {mod} = struct"
+            return f"module {mod} = struct"
 
     return line
 
@@ -50,9 +50,9 @@ def add_extern_attributes(content: str):
     for attribute in TagParserModule.__annotations__:
         content += f"\nlet {attribute} = Tag_Parser.{attribute};;"
     for attribute in SemanticAnalysisModule.__annotations__:
-        content += f"\nlet ${attribute} = Semantic_Analysis.{attribute};;"
+        content += f"\nlet {attribute} = Semantic_Analysis.{attribute};;"
     for attribute in CodeGenerationModule.__annotations__:
-        content += f"\nlet ${attribute} = Code_Generation.${attribute};;"
+        content += f"\nlet {attribute} = Code_Generation.{attribute};;"
         
     return content
 
