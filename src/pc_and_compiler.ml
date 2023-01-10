@@ -1066,7 +1066,7 @@ module Tag_Parser : TAG_PARSER = struct
 
   
   let rec macro_expand_letrec vars body =
-      let whatever = ScmPair (ScmSymbol "quote", ScmPair (ScmSymbol "w\e", ScmNil)) in
+      let whatever = ScmPair (ScmSymbol "quote", ScmPair (ScmSymbol "whatever", ScmNil)) in
         let rec fix_let_rec = function
           | [] -> (ScmNil, body)
           | ScmPair(id, sexpr)::rest ->
