@@ -1701,7 +1701,6 @@ module Code_Generation : CODE_GENERATION= struct
 
   let search_constant_address = fun x -> raise X_not_yet_implemented;;
 
-  let string_of_sexpr = Reader.string_of_sexpr;;
   let const_repr sexpr loc table = match sexpr with
     | ScmVoid -> ([RTTI "T_void"], 1)
     | ScmNil -> ([RTTI "T_nil"], 1)
