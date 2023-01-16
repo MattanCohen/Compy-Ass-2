@@ -1701,7 +1701,7 @@ module Code_Generation : CODE_GENERATION = struct
           | ScmVarDef' (_, expr')
           | ScmBoxSet' (_, expr') -> run expr'
           | ScmLambda' (_, _, expr') -> run expr'
-          | ScmApplic' (expr', exprs', _) -> run expr' @ runs exprs' in
+          | ScmApplic' (expr', exprs', _) -> runs (expr' :: exprs') in
   runs exprs';;
 
   (* TODO: TEST *)
