@@ -37,7 +37,7 @@ def main():
         for input_file in OUTPUT_FILES:
             zf.write(pathlib.Path(SOURCE_DIR, input_file).absolute(), input_file)
 
-    print('done!')
+    print(f'done! saved at: {SUBMISSION_ZIP_NAME}.zip')
 
 
 if __name__ == '__main__':
