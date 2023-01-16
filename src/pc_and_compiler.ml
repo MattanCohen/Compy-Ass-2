@@ -1736,7 +1736,7 @@ module Code_Generation : CODE_GENERATION = struct
 
   (* TODO: TEST *)
   let search_constant_address: sexpr -> constants_table -> int = fun sym table ->
-    let entry = List.find (fun (sexp, _, _) -> sexp = sym) table in
+    let entry = List.find (fun entry -> get_sexp entry = sym) table in
     get_address entry;;
 
   let const_repr sexpr loc table = match sexpr with
