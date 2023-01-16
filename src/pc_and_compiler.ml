@@ -1641,7 +1641,9 @@ module type CODE_GENERATION =
     val compile_scheme_file : string -> string -> unit
   end;;
 
-module Code_Generation : CODE_GENERATION= struct
+
+
+module Code_Generation : CODE_GENERATION = struct
 
   (* areas that raise this exception are NOT for the
    * final project! please leave these unimplemented,
@@ -1722,9 +1724,21 @@ module Code_Generation : CODE_GENERATION= struct
     | Quad of int
     | QuadFloat of float
     | ConstPtr of int;;
+  
+  type constant_entry = sexpr * int * initialized_data list;;
+  let get_sexp: constant_entry -> sexpr = fun entry -> match entry with
+      (sexp, _ , _) -> sexp;;
+  let get_address: constant_entry -> int = fun entry -> match entry with
+      (_, address, _) -> address;;
+  let get_initialized_data: constant_entry -> initialized_data list = fun entry -> match entry with
+      (_, _, data) -> data;;
 
-  (* TODO: IMPLEMENT *)
-  let search_constant_address = fun x -> raise X_not_yet_implemented;;
+  type constants_table = constant_entry list;;
+
+  (* TODO: TEST *)
+  let search_constant_address: sexpr -> constants_table -> int = fun sym table ->
+    let entry = List.find (fun (sexp, _, _) -> sexp = sym) table in
+    get_address entry;;
 
   let const_repr sexpr loc table = match sexpr with
     | ScmVoid -> ([RTTI "T_void"], 1)
