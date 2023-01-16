@@ -1677,6 +1677,7 @@ module Code_Generation : CODE_GENERATION= struct
   let foreach: 'a list -> ('a -> unit) -> unit  = fun list func ->
     let _ = List.fold_left (fun _ x -> func x) () list in
     ()
+
   let remove_duplicates list =
     let res =  ref [] in
     let add_if_not_member x = if List.mem x res.contents then () else res := res.contents @ [x] in
@@ -1708,7 +1709,7 @@ module Code_Generation : CODE_GENERATION= struct
       | ScmVoid | ScmNil | ScmBoolean _ | ScmChar _ | ScmString _ | ScmNumber _ -> [sexpr]
       | ScmSymbol sym -> [ScmString(sym) ; sexpr]
       | ScmPair (car, cdr) -> (run car) @ (run cdr) @ [sexpr]
-      | ScmVector sexprs -> runs sexprs @ [sexpr]
+      | ScmVector sexprs -> runs sexprs @ [sexpr] (*TODO: Maybe this case should be 'runs List.rev sexprs @ [sexpr]'. Remove after testing *)
     and runs sexprs =
       List.fold_left (fun full sexpr -> full @ (run sexpr)) [] sexprs
     in fun exprs' ->
