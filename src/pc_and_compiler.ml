@@ -1510,9 +1510,6 @@ end;; (* end of module Semantic_Analysis *)
 
 let sexpr_of_var' (Var' (name, _)) = ScmSymbol name;;
 
-let foreach: 'a list -> ('a -> unit) -> unit  = fun list func ->
-  let _ = List.fold_left (fun _ x -> func x) () list in
-  ()
 
 let rec sexpr_of_expr' = function
   | ScmConst' (ScmVoid) -> ScmVoid
@@ -1676,7 +1673,10 @@ module Code_Generation : CODE_GENERATION= struct
     in function
     | [] -> []
     | s -> run (s, n, (fun s -> s));;
-
+  
+  let foreach: 'a list -> ('a -> unit) -> unit  = fun list func ->
+    let _ = List.fold_left (fun _ x -> func x) () list in
+    ()
   let remove_duplicates list =
     let res =  ref [] in
     let add_if_not_member x = if List.mem x res.contents then () else res := res.contents @ [x] in
