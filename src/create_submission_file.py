@@ -27,7 +27,7 @@ def main():
     pc_ml_content, compiler_ml_content = split_combined_file()
     pc_ml_path = pathlib.Path(SOURCE_DIR, PC_OUTPUT_FILE)
     compiler_ml_path = pathlib.Path(SOURCE_DIR, COMPILER_OUTPUT_FILE)
-    submission_full_filename = f'{SUBMISSION_ZIP_NAME}.zip'
+    submission_full_zipname = f'{SUBMISSION_ZIP_NAME}.zip'
 
     with pc_ml_path.open('w', encoding='utf8') as pc_ml:
         pc_ml.write(pc_ml_content)
@@ -35,11 +35,11 @@ def main():
     with compiler_ml_path.open('w', encoding='utf8') as compiler_ml:
         compiler_ml.write(compiler_ml_content)
 
-    with ZipFile(submission_full_filename, 'w') as zf:
-        for input_file in OUTPUT_FILES:
-            zf.write(pathlib.Path(SOURCE_DIR, input_file).absolute(), input_file)
+    with ZipFile(submission_full_zipname, 'w') as zf:
+        for output_file in OUTPUT_FILES:
+            zf.write(pathlib.Path(SOURCE_DIR, output_file).absolute(), output_file)
 
-    print(f'done! saved at: {pathlib.Path(submission_full_filename).absolute()}')
+    print(f'done! saved at: {pathlib.Path(submission_full_zipname).absolute()}')
 
 
 if __name__ == '__main__':
