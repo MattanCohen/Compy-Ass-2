@@ -1683,6 +1683,7 @@ module Code_Generation : CODE_GENERATION= struct
     let _ = foreach list add_if_not_member in
     res.contents
 
+  (* TODO: TEST *)
   let collect_constants exprs' =
     let rec runs: expr' list -> sexpr list = fun exprs' -> List.flatten (List.map run exprs')
       and run: expr' -> sexpr list = fun expr' ->
@@ -1701,17 +1702,13 @@ module Code_Generation : CODE_GENERATION= struct
           | ScmApplic' (expr', exprs', _) -> run expr' @ runs exprs' in
   runs exprs';;
 
-  
-  (*TODO: IMPLEMENT*)
+  (* TODO: TEST *)
   let add_sub_constants =
     let rec run sexpr = match sexpr with
-      | ScmVoid -> raise X_not_yet_implemented
-      | ScmNil -> raise X_not_yet_implemented
-      | ScmBoolean _ | ScmChar _ | ScmString _ | ScmNumber _ ->
-         raise X_not_yet_implemented
-      | ScmSymbol sym -> raise X_not_yet_implemented
+      | ScmVoid | ScmNil | ScmBoolean _ | ScmChar _ | ScmString _ | ScmNumber _ -> [sexpr]
+      | ScmSymbol sym -> [ScmString(sym) ; sexpr]
       | ScmPair (car, cdr) -> (run car) @ (run cdr) @ [sexpr]
-      | ScmVector sexprs -> raise X_not_yet_implemented
+      | ScmVector sexprs -> runs sexprs @ [sexpr]
     and runs sexprs =
       List.fold_left (fun full sexpr -> full @ (run sexpr)) [] sexprs
     in fun exprs' ->
