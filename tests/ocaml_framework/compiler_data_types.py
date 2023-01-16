@@ -66,5 +66,6 @@ class CodeGenerationModule:
     search_constant_address:    Callable[..., any]
     collect_free_vars:          Callable[..., any]
     code_gen:                   Callable[..., any]
+    remove_duplicates:          Callable[[list[T]], list[T]]
 
 

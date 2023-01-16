@@ -1674,10 +1674,11 @@ module Code_Generation : CODE_GENERATION= struct
     | s -> run (s, n, (fun s -> s));;
 
 
+  let rec remove_duplicates = fun list -> match list with
+    | [] -> [] 
+    | member :: rest -> if List.mem member rest then remove_duplicates rest else member :: remove_duplicates rest;;
+    
   (*TODO: IMPLEMENT*)
-  let remove_duplicates = fun x -> raise X_not_yet_implemented;;
-  (*TODO: IMPLEMENT*)
-
   let collect_constants = fun x -> raise X_not_yet_implemented;;
   
   (*TODO: IMPLEMENT*)

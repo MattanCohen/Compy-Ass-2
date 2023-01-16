@@ -467,6 +467,11 @@ class TestLet(CompilerTestCase):
             print(f"let parsed:    {parsedLet}")
             print("")
 
+class TestRemoveDuplicates(CompilerTestCase):
+    def basic_test(self):
+        self.assertEqual(list(module.remove_duplicates([])), [])
+    def test1(self):
+        self.assertEqual(list(module.remove_duplicates([1, 2, 2, 3, 3, 3])), [1, 2, 3])
 
         
 
