@@ -1673,13 +1673,30 @@ module Code_Generation : CODE_GENERATION= struct
     | [] -> []
     | s -> run (s, n, (fun s -> s));;
 
+  let remove_duplicates list =
+    let res =  ref [] in
+    let add_if_not_member x = if List.mem x res.contents then () else res := res.contents @ [x] in
+    let _ = List.fold_left (fun _ x -> add_if_not_member x) () list in
+    res.contents
 
-  let rec remove_duplicates = fun list -> match list with
-    | [] -> [] 
-    | member :: rest -> if List.mem member rest then remove_duplicates rest else member :: remove_duplicates rest;;
-    
-  (*TODO: IMPLEMENT*)
-  let collect_constants = fun x -> raise X_not_yet_implemented;;
+  let collect_constants exprs' =
+    let rec runs: expr' list -> sexpr list = fun exprs' -> List.flatten (List.map run exprs')
+      and run: expr' -> sexpr list = fun expr' ->
+        match expr' with
+          | ScmConst' sexpr -> [sexpr]
+          | ScmVarGet' _ 
+          | ScmVarSet' _ 
+          | ScmBox' _ 
+          | ScmBoxGet' _ -> []
+          | ScmIf' (test, dit, dif) ->  runs [test; dit; dif]
+          | ScmSeq' exprs'
+          | ScmOr' exprs' -> runs exprs'
+          | ScmVarDef' (_, expr')
+          | ScmBoxSet' (_, expr') -> run expr'
+          | ScmLambda' (_, _, expr') -> run expr'
+          | ScmApplic' (expr', exprs', _) -> run expr' @ runs exprs' in
+  runs exprs';;
+
   
   (*TODO: IMPLEMENT*)
   let add_sub_constants =

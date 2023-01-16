@@ -472,6 +472,8 @@ class TestRemoveDuplicates(CompilerTestCase):
         self.assertEqual(list(module.remove_duplicates([])), [])
     def test1(self):
         self.assertEqual(list(module.remove_duplicates([1, 2, 2, 3, 3, 3])), [1, 2, 3])
+    def test2(self):
+        self.assertEqual(list(module.remove_duplicates([1, 2, 1])), [1, 2])
 
         
 
