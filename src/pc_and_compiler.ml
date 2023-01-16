@@ -1709,7 +1709,7 @@ module Code_Generation : CODE_GENERATION= struct
       | ScmVoid | ScmNil | ScmBoolean _ | ScmChar _ | ScmString _ | ScmNumber _ -> [sexpr]
       | ScmSymbol sym -> [ScmString(sym) ; sexpr]
       | ScmPair (car, cdr) -> (run car) @ (run cdr) @ [sexpr]
-      | ScmVector sexprs -> runs sexprs @ [sexpr] (*TODO: Maybe this case should be 'runs List.rev sexprs @ [sexpr]'. Remove after testing *)
+      | ScmVector sexprs -> runs sexprs @ [sexpr]
     and runs sexprs =
       List.fold_left (fun full sexpr -> full @ (run sexpr)) [] sexprs
     in fun exprs' ->
