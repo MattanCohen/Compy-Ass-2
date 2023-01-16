@@ -1676,14 +1676,14 @@ module Code_Generation : CODE_GENERATION = struct
     | [] -> []
     | s -> run (s, n, (fun s -> s));;
   
-  let foreach: 'a list -> ('a -> unit) -> unit  = fun list func ->
+  let foreach: ('a -> unit) -> 'a list -> unit = fun func list ->
     let _ = List.fold_left (fun _ x -> func x) () list in
     ()
 
   let remove_duplicates list =
     let res =  ref [] in
     let add_if_not_member x = if List.mem x res.contents then () else res := res.contents @ [x] in
-    let _ = foreach list add_if_not_member in
+    let _ = foreach add_if_not_member list in
     res.contents
 
   (* TODO: TEST *)
