@@ -1677,8 +1677,7 @@ module Code_Generation : CODE_GENERATION = struct
     | s -> run (s, n, (fun s -> s));;
   
   let foreach: ('a -> unit) -> 'a list -> unit = fun func list ->
-    let _ = List.fold_left (fun _ x -> func x) () list in
-    ()
+    List.fold_left (fun _ x -> func x) () list;;
 
   let remove_duplicates list =
     let res =  ref [] in
