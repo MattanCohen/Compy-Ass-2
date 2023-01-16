@@ -1723,6 +1723,7 @@ module Code_Generation : CODE_GENERATION= struct
     | QuadFloat of float
     | ConstPtr of int;;
 
+  (* TODO: IMPLEMENT *)
   let search_constant_address = fun x -> raise X_not_yet_implemented;;
 
   let const_repr sexpr loc table = match sexpr with
