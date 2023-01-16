@@ -1673,10 +1673,14 @@ module Code_Generation : CODE_GENERATION= struct
     | [] -> []
     | s -> run (s, n, (fun s -> s));;
 
+
+  (*TODO: IMPLEMENT*)
   let remove_duplicates = fun x -> raise X_not_yet_implemented;;
+  (*TODO: IMPLEMENT*)
 
   let collect_constants = fun x -> raise X_not_yet_implemented;;
-
+  
+  (*TODO: IMPLEMENT*)
   let add_sub_constants =
     let rec run sexpr = match sexpr with
       | ScmVoid -> raise X_not_yet_implemented
@@ -1881,6 +1885,8 @@ module Code_Generation : CODE_GENERATION= struct
       ("eq?", "L_code_ptr_eq")
     ];;
 
+  
+  (*TODO: IMPLEMENT*)
   let collect_free_vars =
     let rec run = function
       | ScmConst' _ -> raise X_not_yet_implemented
@@ -1999,7 +2005,9 @@ module Code_Generation : CODE_GENERATION= struct
     make_make_label ".L_tc_recycle_frame_loop";;
   let make_tc_applic_recycle_frame_done =
     make_make_label ".L_tc_recycle_frame_done";;
+  
 
+  (*TODO: IMPLEMENT*)
   let code_gen exprs' =
     let consts = make_constants_table exprs' in
     let free_vars = make_free_vars_table exprs' in
