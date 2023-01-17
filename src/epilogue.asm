@@ -586,7 +586,7 @@ L_code_ptr_bin_apply:   ; (apply proc list-s) -: recieves 2 arguments
         mov rcx, 0              ; length(list-s)
         mov rdx, 0
 
-.Loop:
+.Loop1:
         cmp rbx, T_nil          ; if (rbx == nill)
         je .End                 ;       go to end
                                 ; else
@@ -596,17 +596,17 @@ L_code_ptr_bin_apply:   ; (apply proc list-s) -: recieves 2 arguments
         mov SOB_PAIR_CDR(rbx), rbx              ; rbx = cdr(rbx)
         inc rcx                                 ; length(list-s)++
         add rdx, 8
-        jmp .Loop                               ; go to Loop
+        jmp .Loop1                               ; go to Loop1
         
-.End: 
+.Loop2: 
         cmp rdx, 0
-        je .Finish
+        je .End
 
         push [rdx]
         add rdx, -8
-        jmp .End
+        jmp .Loop2
 
-.Finish:
+.End:
         push rcx                        ; push list length
         push SOB_CLOSURE_ENV(rax)       ; push proc env
         push RET_ADDR                   ; push return address
