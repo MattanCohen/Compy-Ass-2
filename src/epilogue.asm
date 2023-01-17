@@ -588,7 +588,7 @@ L_code_ptr_bin_apply:   ; (apply proc list-s) -: recieves 2 arguments
 
 .Loop1:
         cmp rbx, T_nil          ; if (rbx == nill)
-        je .End                 ;       go to end
+        je .Loop2                 ;       go to Loop2
                                 ; else
         assert_pair(rbx)                ; if (rbx is pair)
         ; push SOB_PAIR_CAR(rbx)                  ; push car(rbx) 
