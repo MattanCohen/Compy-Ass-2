@@ -569,9 +569,6 @@ bind_primitive:
         LEAVE
         ret
 
-;; TODO: IMPLEMENT
-;;; PLEASE IMPLEMENT THIS PROCEDURE
-
 L_code_ptr_bin_apply:   ; (apply proc list-s) -: recieves 2 arguments
                         ;                        argument %1 is procedure
                         ;                        argument %2 is proper list.
