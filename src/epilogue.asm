@@ -584,18 +584,29 @@ L_code_ptr_bin_apply:   ; (apply proc list-s) -: recieves 2 arguments
         mov rbx, PARAM(1)       ; rbx = list-s
         assert_pair(rbx)        
         mov rcx, 0              ; length(list-s)
+        mov rdx, 0
 
 .Loop:
         cmp rbx, T_nil          ; if (rbx == nill)
         je .End                 ;       go to end
                                 ; else
         assert_pair(rbx)                ; if (rbx is pair)
-        push SOB_PAIR_CAR(rbx)                  ; push car(rbx) 
+        ; push SOB_PAIR_CAR(rbx)                  ; push car(rbx) 
+        mov SOB_PAIR_CAR(rbx), [rdx]                  ; push car(rbx) 
         mov SOB_PAIR_CDR(rbx), rbx              ; rbx = cdr(rbx)
         inc rcx                                 ; length(list-s)++
+        add rdx, 8
         jmp .Loop                               ; go to Loop
         
 .End: 
+        cmp rdx, 0
+        je .Finish
+
+        push [rdx]
+        add rdx, -8
+        jmp .End
+
+.Finish:
         push rcx                        ; push list length
         push SOB_CLOSURE_ENV(rax)       ; push proc env
         push RET_ADDR                   ; push return address
