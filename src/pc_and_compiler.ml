@@ -2180,7 +2180,7 @@ module Code_Generation : CODE_GENERATION = struct
         let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args)
         in
         per_arg_exps ^ 
-        Printf.sprintf "\tpush %i\n" (List.length args) ^
+        Printf.sprintf "\tpush %d\n" (List.length args) ^
         (run params env proc) ^
         "\tassert_closure(rax)\n" ^
         "\tSOB_CLOSURE_ENV(rax)\n" ^
