@@ -1642,6 +1642,7 @@ module type CODE_GENERATION =
   end;;
 
 
+
 module Code_Generation : CODE_GENERATION = struct
 
   (* areas that raise this exception are NOT for the
@@ -1677,9 +1678,6 @@ module Code_Generation : CODE_GENERATION = struct
   
   let foreach: ('a -> unit) -> 'a list -> unit = fun func list ->
     List.fold_left (fun _ x -> func x) () list;;
-  let range n =
-    let rec run i = if i = n then [] else i :: run (i+1) in
-    run 0
 
   let remove_duplicates list =
     let res =  ref [] in
@@ -2051,7 +2049,7 @@ module Code_Generation : CODE_GENERATION = struct
       | ScmConst' sexpr -> (*DONE : FROM chapter 6 slides: page 76 *)
         let address = search_constant_address sexpr consts in
         Printf.sprintf
-          "\tmov rax, [%d]\n"
+          "\tmov rax, %d\n"
           address
       | ScmVarGet' (Var' (v, Free)) -> (* WRITTEN BY MAIER! -TODO : FROM chapter 6 slides: page 81 *)
          let label = search_free_var_table v free_vars in
@@ -2065,8 +2063,8 @@ module Code_Generation : CODE_GENERATION = struct
       | ScmVarGet' (Var' (v, Bound (major, minor))) -> (*DONE MATTAN : FROM chapter 6 slides: page 79 *)
          (Printf.sprintf "\t; performing var get\n")
          ^ (Printf.sprintf "\t; mov rax, qword [rpb + 8 * 2]\n")
-         ^ (Printf.sprintf "\t; mov rax, qword [rpb + 8 * [%d]]\n" major)
-         ^ (Printf.sprintf "\t; mov rax, qword [rpb + 8 * [%d]]\n" minor)
+         ^ (Printf.sprintf "\t; mov rax, qword [rpb + 8 * %d]\n" major)
+         ^ (Printf.sprintf "\t; mov rax, qword [rpb + 8 * %d]\n" minor)
 
       | ScmIf' (test, dit, dif) -> (*DONE MATTAN : FROM chapter 6 slides: page 86 *)
         let genedTest = (run params env test) in 
@@ -2105,12 +2103,27 @@ module Code_Generation : CODE_GENERATION = struct
             (* and just in case someone messed up the tag-parser: *)
             | None -> run params env (ScmConst' (ScmBoolean false)))
          in asm_code
-      | ScmVarSet' (Var' (v, Free), expr') -> (*TODO Mattan : FROM chapter 6 slides: page 82 *)
-         raise X_not_yet_implemented
-      | ScmVarSet' (Var' (v, Param minor), expr') -> (*TODO Mattan : FROM chapter 6 slides: page 78 *)
-         raise X_not_yet_implemented
-      | ScmVarSet' (Var' (v, Bound (major, minor)), expr') -> (*TODO Mattan : FROM chapter 6 slides: page 80 *)
-         raise X_not_yet_implemented
+      | ScmVarSet' (Var' (v, Free), expr') -> (*DONE Mattan : FROM chapter 6 slides: page 82 *)
+          let genedExpr = (run params env expr') in
+          let labelInFVarTableV = -1 in
+          (Printf.sprintf "\t; performing free var set statement\n")
+          ^ genedExpr
+          ^ (Printf.sprintf "\t; mov qword [%d], rax \n" labelInFVarTableV)
+          ^ (Printf.sprintf "\t; mov rax, sob_void\n")
+      | ScmVarSet' (Var' (v, Param minor), expr') -> (*DONE Mattan : FROM chapter 6 slides: page 78 *)
+          let genedExpr = (run params env expr') in 
+          (Printf.sprintf "\t; performing var set statement\n")
+          ^ genedExpr
+          ^ (Printf.sprintf "\t; mov qword [rbp + 8 ∗ (4 + %d)], rax \n" minor)
+          ^ (Printf.sprintf "\t; mov rax, sob_void\n")
+      | ScmVarSet' (Var' (v, Bound (major, minor)), expr') -> (*DONE Mattan : FROM chapter 6 slides: page 80 *)
+          let genedExpr = (run params env expr') in 
+          (Printf.sprintf "\t; performing var set statement\n")
+          ^ genedExpr
+          ^ (Printf.sprintf "\t; mov rbx, qword [rbp + 8 * 2]\n")
+          ^ (Printf.sprintf "\t; mov rbx, qword [rbp + 8 * %d]\n" major)
+          ^ (Printf.sprintf "\t; mov qword [rbp + 8 ∗ %d], rax \n" minor)
+          ^ (Printf.sprintf "\t; mov rax, sob_void\n")
       | ScmVarDef' (Var' (v, Free), expr') -> 
          let label = search_free_var_table v free_vars in
          (run params env expr')
@@ -2189,18 +2202,9 @@ module Code_Generation : CODE_GENERATION = struct
          ^ (Printf.sprintf "\tret 8 * (2 + %d)\n" (List.length params'))
          ^ (Printf.sprintf "%s:\t; new closure is in rax\n" label_end)
       | ScmLambda' (params', Opt opt, body) ->  (*TODO Nadav: FROM chapter 6 slides: page 100 *)
+         raise X_not_yet_implemented
+      | ScmApplic' (proc, args, Non_Tail_Call) -> (*TODO Nadav: FROM chapter 6 slides: page 97 *) 
         raise X_not_yet_implemented
-      | ScmApplic' (proc, args, Non_Tail_Call) -> (* DONE *)
-        let reversed_args = List.rev args in
-        let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args)
-        in
-        per_arg_exps ^ 
-        Printf.sprintf "\tpush %i\n" (List.length args) ^
-        (run params env proc) ^
-        "\tassert_closure(rax)\n" ^
-        "\tSOB_CLOSURE_ENV(rax)\n" ^
-        "\tSOB_CLOSURE_CODE(rax)\n"
-
       | ScmApplic' (proc, args, Tail_Call) -> (*TODO Nadav: FROM chapter 6 slides: page 108 *)
         raise X_not_yet_implemented
     and runs params env exprs' =
