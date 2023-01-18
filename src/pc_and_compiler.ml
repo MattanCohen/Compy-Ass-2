@@ -2210,10 +2210,7 @@ module Code_Generation : CODE_GENERATION = struct
          ^ (Printf.sprintf "%s:\t; new closure is in rax\n" label_end)
       | ScmLambda' (params', Opt opt, body) ->  (*TODO Nadav: FROM chapter 6 slides: page 100 *)
          raise X_not_yet_implemented
-      | ScmApplic' (proc, args, Non_Tail_Call) -> (*TODO Nadav: FROM chapter 6 slides: page 97 *) 
-        raise X_not_yet_implemented
-<<<<<<< HEAD
-=======
+
       | ScmApplic' (proc, args, Non_Tail_Call) -> (* DONE *)
         let reversed_args = List.rev args in
         let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args)
@@ -2222,14 +2219,42 @@ module Code_Generation : CODE_GENERATION = struct
         Printf.sprintf "\tpush %d\n" (List.length args) ^
         (run params env proc) ^
         "\n\tassert_closure(rax)\n" ^
-        "\tSOB_CLOSURE_ENV(rax)\n" ^
-        "\tSOB_CLOSURE_CODE(rax)\n"
+        "\tcall SOB_CLOSURE_ENV(rax)\n" ^
+        "\tcall SOB_CLOSURE_CODE(rax)\n"
 
->>>>>>> 903418bf5ff64d4e3f6d0498de420b16a0567216
       | ScmApplic' (proc, args, Tail_Call) -> (*TODO Nadav: FROM chapter 6 slides: page 108 *)
+        let argc = List.length args in
+        let label_loop = make_tc_applic_recycle_frame_loop() in
+        let label_done = make_tc_applic_recycle_frame_done() in
         let reversed_args = List.rev args in
         let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args) in
-        raise X_not_yet_implemented
+        let fix_stack = (Printf.sprintf "\tmov rsi, %d\n" (argc + 4)) ^
+          "\tmov rcx, COUNT\n" ^
+          "\tlea rcx, [rbp + 8*rcx + 8*3]\n" ^
+          "\tlea rdx, [rbp - 8*1]\n" ^
+          label_loop ^ "\n" ^
+          "\tcmp rsi, 0\n" ^
+          (Printf.sprintf "\tje %s\n" label_done) ^
+          "\tmov rdi, qword[rdx]\n" ^
+          "\tmov qword[rcx], rdi\n" ^
+          "\tsub rcx, 8\n" ^
+          "\tsub rdx, 8\n" ^
+          "\tdec rsi\n" ^
+          (Printf.sprintf "\tjmp %s\n" label_loop) ^
+          label_done ^ "\n" ^
+          "\tadd rcx, 8\n" ^ 
+          "\tmov rsp, rcx\n"
+        in
+        per_arg_exps ^ 
+        (Printf.sprintf "\tpush %d\n" argc )^
+        (run params env proc) ^
+        "\n\tassert_closure(rax)\n" ^ 
+        "\tpush qword [rbp + 8*1]\n" ^
+        "\tpush qword [rbp]\n" ^
+        fix_stack ^
+        "\tpop rbp ; restore the old rbp\n" ^
+        "\tjmp SOB_CLOSURE_CODE(rax)\n"
+        
     and runs params env exprs' =
       List.map
         (fun expr' ->
