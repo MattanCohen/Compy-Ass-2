@@ -2060,9 +2060,9 @@ module Code_Generation : CODE_GENERATION = struct
           Printf.sprintf
           "\tmov rax, qword [rbp + 8 * (4 + %d)]\n"
           minor 
-      | ScmVarGet' (Var' (v, Bound (major, minor))) -> (*TODO : FROM chapter 6 slides: page 79 *)
+      | ScmVarGet' (Var' (v, Bound (major, minor))) -> (*TODO MATTAN : FROM chapter 6 slides: page 79 *)
          raise X_not_yet_implemented
-      | ScmIf' (test, dit, dif) -> (*TODO : FROM chapter 6 slides: page 86 *) 
+      | ScmIf' (test, dit, dif) -> (*TODO MATTAN : FROM chapter 6 slides: page 86 *) 
           raise X_not_yet_implemented
       | ScmSeq' exprs' -> 
          String.concat "\n"
