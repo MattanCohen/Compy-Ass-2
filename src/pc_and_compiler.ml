@@ -218,7 +218,7 @@ module PC = struct
     ((fun str index ->
       try let ({index_from; index_to; found} as value) = (nt str index)
           in
-          (Printf.printf ";;; %s matched from char %d to char %d, leaving %d chars unread\n"
+          (Printf.printf ";;; %s matchedTODO : FROM char %d to char %d, leaving %d chars unread\n"
 	     desc
 	     index_from index_to
              ((String.length str) - index_to) ;
@@ -2046,17 +2046,27 @@ module Code_Generation : CODE_GENERATION = struct
     let consts = make_constants_table exprs' in
     let free_vars = make_free_vars_table exprs' in
     let rec run params env = function
-      | ScmConst' sexpr -> raise X_not_yet_implemented
-      | ScmVarGet' (Var' (v, Free)) ->
+      | ScmConst' sexpr -> (*TODO : FROM chapter 6 slides: page 76 *)
+        let address = search_constant_address sexpr consts in
+        Printf.sprintf
+          "\tmov rax, [%s]\n"
+          address
+          (* TODO : is address enough? extract? *)
+      | ScmVarGet' (Var' (v, Free)) -> (* WRITTEN BY MAIER! -TODO : FROM chapter 6 slides: page 81 *)
          let label = search_free_var_table v free_vars in
          Printf.sprintf
            "\tmov rax, qword [%s]\n"
            label
-      | ScmVarGet' (Var' (v, Param minor)) -> raise X_not_yet_implemented
-      | ScmVarGet' (Var' (v, Bound (major, minor))) ->
+      | ScmVarGet' (Var' (v, Param minor)) -> (*TODO : FROM chapter 6 slides: page 77 *)
+          Printf.sprintf
+          "\tmov rax, qword [rbp + 8 * (4 + %d)]\n"
+          minor 
+          (* TODO : is minor a number? or should we extract it? *)
+      | ScmVarGet' (Var' (v, Bound (major, minor))) -> (*TODO : FROM chapter 6 slides: page 79 *)
          raise X_not_yet_implemented
-      | ScmIf' (test, dit, dif) -> raise X_not_yet_implemented
-      | ScmSeq' exprs' ->
+      | ScmIf' (test, dit, dif) -> (*TODO : FROM chapter 6 slides: page 86 *) 
+          raise X_not_yet_implemented
+      | ScmSeq' exprs' -> 
          String.concat "\n"
            (List.map (run params env) exprs')
       | ScmOr' exprs' ->
@@ -2080,13 +2090,13 @@ module Code_Generation : CODE_GENERATION = struct
             (* and just in case someone messed up the tag-parser: *)
             | None -> run params env (ScmConst' (ScmBoolean false)))
          in asm_code
-      | ScmVarSet' (Var' (v, Free), expr') ->
+      | ScmVarSet' (Var' (v, Free), expr') -> (*TODO : FROM chapter 6 slides: page 82 *)
          raise X_not_yet_implemented
-      | ScmVarSet' (Var' (v, Param minor), expr') ->
+      | ScmVarSet' (Var' (v, Param minor), expr') -> (*TODO : FROM chapter 6 slides: page 78 *)
          raise X_not_yet_implemented
-      | ScmVarSet' (Var' (v, Bound (major, minor)), expr') ->
+      | ScmVarSet' (Var' (v, Bound (major, minor)), expr') -> (*TODO : FROM chapter 6 slides: page 80 *)
          raise X_not_yet_implemented
-      | ScmVarDef' (Var' (v, Free), expr') ->
+      | ScmVarDef' (Var' (v, Free), expr') -> 
          let label = search_free_var_table v free_vars in
          (run params env expr')
          ^ (Printf.sprintf "\tmov qword [%s], rax\n" label)
@@ -2095,12 +2105,14 @@ module Code_Generation : CODE_GENERATION = struct
          raise X_not_yet_supported
       | ScmVarDef' (Var' (v, Bound (major, minor)), expr') ->
          raise X_not_yet_supported
-      | ScmBox' (Var' (v, Param minor)) -> raise X_not_yet_implemented
-      | ScmBox' _ -> raise X_not_yet_implemented
+      | ScmBox' (Var' (v, Param minor)) -> 
+          raise X_not_yet_implemented
+      | ScmBox' _ -> raise X_not_yet_implemented (* TODO: WTF?? *)
       | ScmBoxGet' var' ->
          (run params env (ScmVarGet' var'))
          ^ "\tmov rax, qword [rax]\n"
-      | ScmBoxSet' (var', expr') -> raise X_not_yet_implemented
+      | ScmBoxSet' (var', expr') -> (*TODO : FROM chapter 6 slides: page 90 *)
+           raise X_not_yet_implemented
       | ScmLambda' (params', Simple, body) ->
          let label_loop_env = make_lambda_simple_loop_env ()
          and label_loop_env_end = make_lambda_simple_loop_env_end ()
@@ -2161,9 +2173,12 @@ module Code_Generation : CODE_GENERATION = struct
          ^ "\tleave\n"
          ^ (Printf.sprintf "\tret 8 * (2 + %d)\n" (List.length params'))
          ^ (Printf.sprintf "%s:\t; new closure is in rax\n" label_end)
-      | ScmLambda' (params', Opt opt, body) -> raise X_not_yet_implemented
-      | ScmApplic' (proc, args, Non_Tail_Call) -> raise X_not_yet_implemented
-      | ScmApplic' (proc, args, Tail_Call) -> raise X_not_yet_implemented
+      | ScmLambda' (params', Opt opt, body) ->  (*TODO : FROM chapter 6 slides: page 100 *)
+         raise X_not_yet_implemented
+      | ScmApplic' (proc, args, Non_Tail_Call) -> (*TODO : FROM chapter 6 slides: page 97 *) 
+        raise X_not_yet_implemented
+      | ScmApplic' (proc, args, Tail_Call) -> (*TODO : FROM chapter 6 slides: page 108 *)
+        raise X_not_yet_implemented
     and runs params env exprs' =
       List.map
         (fun expr' ->
