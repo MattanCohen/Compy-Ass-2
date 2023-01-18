@@ -2046,22 +2046,20 @@ module Code_Generation : CODE_GENERATION = struct
     let consts = make_constants_table exprs' in
     let free_vars = make_free_vars_table exprs' in
     let rec run params env = function
-      | ScmConst' sexpr -> (*TODO : FROM chapter 6 slides: page 76 *)
+      | ScmConst' sexpr -> (*DONE : FROM chapter 6 slides: page 76 *)
         let address = search_constant_address sexpr consts in
         Printf.sprintf
           "\tmov rax, [%d]\n"
           address
-          (* TODO : is address enough? extract? *)
       | ScmVarGet' (Var' (v, Free)) -> (* WRITTEN BY MAIER! -TODO : FROM chapter 6 slides: page 81 *)
          let label = search_free_var_table v free_vars in
          Printf.sprintf
            "\tmov rax, qword [%s]\n"
            label
-      | ScmVarGet' (Var' (v, Param minor)) -> (*TODO : FROM chapter 6 slides: page 77 *)
+      | ScmVarGet' (Var' (v, Param minor)) -> (*DONE : FROM chapter 6 slides: page 77 *)
           Printf.sprintf
           "\tmov rax, qword [rbp + 8 * (4 + %d)]\n"
           minor 
-          (* TODO : is minor a number? or should we extract it? *)
       | ScmVarGet' (Var' (v, Bound (major, minor))) -> (*TODO : FROM chapter 6 slides: page 79 *)
          raise X_not_yet_implemented
       | ScmIf' (test, dit, dif) -> (*TODO : FROM chapter 6 slides: page 86 *) 
