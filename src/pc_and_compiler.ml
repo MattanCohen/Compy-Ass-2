@@ -2202,10 +2202,21 @@ module Code_Generation : CODE_GENERATION = struct
          ^ (Printf.sprintf "\tret 8 * (2 + %d)\n" (List.length params'))
          ^ (Printf.sprintf "%s:\t; new closure is in rax\n" label_end)
       | ScmLambda' (params', Opt opt, body) ->  (*TODO Nadav: FROM chapter 6 slides: page 100 *)
-         raise X_not_yet_implemented
-      | ScmApplic' (proc, args, Non_Tail_Call) -> (*TODO Nadav: FROM chapter 6 slides: page 97 *) 
         raise X_not_yet_implemented
+      | ScmApplic' (proc, args, Non_Tail_Call) -> (* DONE *)
+        let reversed_args = List.rev args in
+        let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args)
+        in
+        per_arg_exps ^ 
+        Printf.sprintf "\tpush %d\n" (List.length args) ^
+        (run params env proc) ^
+        "\n\tassert_closure(rax)\n" ^
+        "\tSOB_CLOSURE_ENV(rax)\n" ^
+        "\tSOB_CLOSURE_CODE(rax)\n"
+
       | ScmApplic' (proc, args, Tail_Call) -> (*TODO Nadav: FROM chapter 6 slides: page 108 *)
+        let reversed_args = List.rev args in
+        let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args) in
         raise X_not_yet_implemented
     and runs params env exprs' =
       List.map
