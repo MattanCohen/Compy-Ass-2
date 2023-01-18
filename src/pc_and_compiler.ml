@@ -2197,11 +2197,13 @@ module Code_Generation : CODE_GENERATION = struct
         per_arg_exps ^ 
         Printf.sprintf "\tpush %d\n" (List.length args) ^
         (run params env proc) ^
-        "\tassert_closure(rax)\n" ^
+        "\n\tassert_closure(rax)\n" ^
         "\tSOB_CLOSURE_ENV(rax)\n" ^
         "\tSOB_CLOSURE_CODE(rax)\n"
 
       | ScmApplic' (proc, args, Tail_Call) -> (*TODO Nadav: FROM chapter 6 slides: page 108 *)
+        let reversed_args = List.rev args in
+        let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args) in
         raise X_not_yet_implemented
     and runs params env exprs' =
       List.map
