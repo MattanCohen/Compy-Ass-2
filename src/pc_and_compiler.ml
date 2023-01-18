@@ -2171,11 +2171,11 @@ module Code_Generation : CODE_GENERATION = struct
          ^ "\tleave\n"
          ^ (Printf.sprintf "\tret 8 * (2 + %d)\n" (List.length params'))
          ^ (Printf.sprintf "%s:\t; new closure is in rax\n" label_end)
-      | ScmLambda' (params', Opt opt, body) ->  (*TODO : FROM chapter 6 slides: page 100 *)
+      | ScmLambda' (params', Opt opt, body) ->  (*TODO Nadav: FROM chapter 6 slides: page 100 *)
          raise X_not_yet_implemented
-      | ScmApplic' (proc, args, Non_Tail_Call) -> (*TODO : FROM chapter 6 slides: page 97 *) 
+      | ScmApplic' (proc, args, Non_Tail_Call) -> (*TODO Nadav: FROM chapter 6 slides: page 97 *) 
         raise X_not_yet_implemented
-      | ScmApplic' (proc, args, Tail_Call) -> (*TODO : FROM chapter 6 slides: page 108 *)
+      | ScmApplic' (proc, args, Tail_Call) -> (*TODO Nadav: FROM chapter 6 slides: page 108 *)
         raise X_not_yet_implemented
     and runs params env exprs' =
       List.map
