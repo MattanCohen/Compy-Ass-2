@@ -2044,7 +2044,7 @@ module Code_Generation : CODE_GENERATION = struct
   
 
   (*TODO: IMPLEMENT*)
-  let code_gen exprs' =
+  let rec code_gen exprs' =
     let consts = make_constants_table exprs' in
     let free_vars = make_free_vars_table exprs' in
     let rec run params env = function
@@ -2062,11 +2062,26 @@ module Code_Generation : CODE_GENERATION = struct
           Printf.sprintf
           "\tmov rax, qword [rbp + 8 * (4 + %d)]\n"
           minor 
-      | ScmVarGet' (Var' (v, Bound (major, minor))) -> (*TODO MATTAN : FROM chapter 6 slides: page 79 *)
-         raise X_not_yet_implemented
-      | ScmIf' (test, dit, dif) -> (*TODO MATTAN : FROM chapter 6 slides: page 86 *) 
-          raise X_not_yet_implemented
-      | ScmSeq' exprs' -> 
+      | ScmVarGet' (Var' (v, Bound (major, minor))) -> (*DONE MATTAN : FROM chapter 6 slides: page 79 *)
+         (Printf.sprintf "\t; performing var get\n")
+         ^ (Printf.sprintf "\t; mov rax, qword [rpb + 8 * 2]\n")
+         ^ (Printf.sprintf "\t; mov rax, qword [rpb + 8 * [%d]]\n" major)
+         ^ (Printf.sprintf "\t; mov rax, qword [rpb + 8 * [%d]]\n" minor)
+
+      | ScmIf' (test, dit, dif) -> (*DONE MATTAN : FROM chapter 6 slides: page 86 *)
+        let genedTest = (run params env test) in 
+        let genedDit = (run params env dit) in 
+        let genedDif = (run params env dif) in 
+        (Printf.sprintf "\t; performing if statement\n")
+        ^ genedTest
+        ^ (Printf.sprintf "\t; cmp rax, sob_false\n")
+        ^ (Printf.sprintf "\t; je Lelse\n")
+        ^ genedDit
+        ^ (Printf.sprintf "\t; jmp Lexit\n")
+        ^ (Printf.sprintf "\t; Lelse:\n")
+        ^ genedDif
+        ^ (Printf.sprintf "\t; Lexit:\n")
+   | ScmSeq' exprs' -> 
          String.concat "\n"
            (List.map (run params env) exprs')
       | ScmOr' exprs' ->
@@ -2090,11 +2105,11 @@ module Code_Generation : CODE_GENERATION = struct
             (* and just in case someone messed up the tag-parser: *)
             | None -> run params env (ScmConst' (ScmBoolean false)))
          in asm_code
-      | ScmVarSet' (Var' (v, Free), expr') -> (*TODO : FROM chapter 6 slides: page 82 *)
+      | ScmVarSet' (Var' (v, Free), expr') -> (*TODO Mattan : FROM chapter 6 slides: page 82 *)
          raise X_not_yet_implemented
-      | ScmVarSet' (Var' (v, Param minor), expr') -> (*TODO : FROM chapter 6 slides: page 78 *)
+      | ScmVarSet' (Var' (v, Param minor), expr') -> (*TODO Mattan : FROM chapter 6 slides: page 78 *)
          raise X_not_yet_implemented
-      | ScmVarSet' (Var' (v, Bound (major, minor)), expr') -> (*TODO : FROM chapter 6 slides: page 80 *)
+      | ScmVarSet' (Var' (v, Bound (major, minor)), expr') -> (*TODO Mattan : FROM chapter 6 slides: page 80 *)
          raise X_not_yet_implemented
       | ScmVarDef' (Var' (v, Free), expr') -> 
          let label = search_free_var_table v free_vars in
