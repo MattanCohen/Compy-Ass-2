@@ -1,11 +1,13 @@
+
 import sys
-import os
 from ast import literal_eval
 import unittest
+from pathlib import Path
 
+root = Path(__file__).parent.parent.parent
+sys.path.append(root.absolute().as_posix())
 
-
-sys.path.insert(0, os.getcwd())
+from tests.ocaml_framework.compiler_data_types import *
 from tests.ocaml_framework.scheme_types import *
 from dataclasses import is_dataclass
 from tests.ocaml_framework.framework import compile_module
@@ -18,6 +20,12 @@ X_no_match = module.PC.X_no_match
 
 
 class CompilerTestCase(unittest.TestCase):
+    # def test_if_compiles(self, content: str):
+    #     output_file = "temp"
+    #     module.compile_scheme_string(output_file, content)
+    #     os.remove(output_file)
+
+
     @staticmethod
     def is_parsing_result(x):
         return hasattr(x, 'index_from') and isinstance(x.index_from, int) and hasattr(x, 'index_to') and isinstance(
@@ -474,6 +482,39 @@ class TestRemoveDuplicates(CompilerTestCase):
         self.assertEqual(list(module.remove_duplicates([1, 2, 2, 3, 3, 3])), [1, 2, 3])
     def test2(self):
         self.assertEqual(list(module.remove_duplicates([1, 2, 1])), [1, 2])
+
+
+class TestInitSCMParsing(CompilerTestCase):
+    def test1(self):
+        pass
+#         self.test_if_compiles("""(define (caar x) (car (car x)))
+# (define (cadr x) (car (cdr x)))
+# (define (cdar x) (cdr (car x)))
+# (define (cddr x) (cdr (cdr x)))
+# (define (caaar x) (car (caar x)))
+# (define (caadr x) (car (cadr x)))
+# (define (cadar x) (car (cdar x)))
+# (define (caddr x) (car (cddr x)))
+# (define (cdaar x) (cdr (caar x)))
+# (define (cdadr x) (cdr (cadr x)))
+# (define (cddar x) (cdr (cdar x)))
+# (define (cdddr x) (cdr (cddr x)))
+# (define (caaaar x) (caar (caar x)))
+# (define (caaadr x) (caar (cadr x)))
+# (define (caadar x) (caar (cdar x)))
+# (define (caaddr x) (caar (cddr x)))
+# (define (cadaar x) (cadr (caar x)))
+# (define (cadadr x) (cadr (cadr x)))
+# (define (caddar x) (cadr (cdar x)))
+# (define (cadddr x) (cadr (cddr x)))
+# (define (cdaaar x) (cdar (caar x)))
+# (define (cdaadr x) (cdar (cadr x)))
+# (define (cdadar x) (cdar (cdar x)))
+# (define (cdaddr x) (cdar (cddr x)))
+# (define (cddaar x) (cddr (caar x)))
+# (define (cddadr x) (cddr (cadr x)))
+# (define (cdddar x) (cddr (cdar x)))
+# (define (cddddr x) (cddr (cddr x)))""")
 
         
 

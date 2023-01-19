@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from types import UnionType
 from typing import TypeVar, Generic, Literal
 
-from tests.ocaml_framework.compiler_data_types import Number
+from  tests.ocaml_framework.compiler_data_types import Number
 
 OcamlPrimitive = None | bool | str | Number | list['OcamlPrimitive'] | tuple['OcamlPrimitive', ...]
 T = TypeVar("T")
