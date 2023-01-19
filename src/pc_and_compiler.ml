@@ -2080,14 +2080,14 @@ module Code_Generation : CODE_GENERATION = struct
         let genedDit = (run params env dit) in 
         let genedDif = (run params env dif) in 
         "\t; performing if statement\n"
-        ^ genedTest
+        ^ Printf.sprintf "%s\n" genedTest
         ^ "\tcmp rax, sob_false\n"
-        ^ "\tje Lelse\n"
-        ^ genedDit
-        ^ "\tjmp Lexit\n"
-        ^ "\t.Lelse:\n"
-        ^ genedDif
-        ^ "\t.Lexit:\n"
+        ^ "\tje .LelseIf\n"
+        ^ Printf.sprintf "%s\n" genedDit
+        ^ "\tjmp LexitIf\n"
+        ^ ".LelseIf:\n"
+        ^ Printf.sprintf "%s\n" genedDif
+        ^ ".LexitIf:\n"
    | ScmSeq' exprs' -> 
          String.concat "\n"
            (List.map (run params env) exprs')
@@ -2116,19 +2116,19 @@ module Code_Generation : CODE_GENERATION = struct
           let genedExpr = (run params env expr') in
           let labelInFVarTableV = search_free_var_table v free_vars in 
           "\t; performing free var set statement\n"
-          ^ genedExpr
+          ^ Printf.sprintf "%s\n" genedExpr
           ^ (Printf.sprintf "\tmov qword [%s], rax \n" labelInFVarTableV)
           ^ "\tmov rax, sob_void\n"
       | ScmVarSet' (Var' (v, Param minor), expr') -> (*DONE Mattan : FROM chapter 6 slides: page 78 *)
           let genedExpr = (run params env expr') in 
           "\tperforming var set statement\n"
-          ^ genedExpr
+          ^ Printf.sprintf "%s\n" genedExpr
           ^ (Printf.sprintf "\tmov qword [rbp + 8 ∗ (4 + %d)], rax \n" minor)
           ^ "\tmov rax, sob_void\n"
       | ScmVarSet' (Var' (v, Bound (major, minor)), expr') -> (*DONE Mattan : FROM chapter 6 slides: page 80 *)
           let genedExpr = (run params env expr') in 
           "\tperforming var set statement\n"
-          ^ genedExpr
+          ^ Printf.sprintf "%s\n" genedExpr
           ^ "\tmov rbx, qword [rbp + 8 * 2]\n"
           ^ (Printf.sprintf "\tmov rbx, qword [rbp + 8 * %d]\n" major)
           ^ (Printf.sprintf "\tmov qword [rbp + 8 ∗ %d], rax \n" minor)
@@ -2156,9 +2156,9 @@ module Code_Generation : CODE_GENERATION = struct
         let genedExpr = (run params env expr') in 
         let genedVar = (run params env (ScmVarGet' var')) in 
         "\t; performing box set statement\n"
-        ^ genedExpr
+        ^ Printf.sprintf "%s\n" genedExpr
         ^ "\tpush rax\n"
-        ^ genedVar
+        ^ Printf.sprintf "%s\n" genedVar
         ^ "\tpop qword[rax]\n"
         ^ "\tmov rax, sob_void\n"
       | ScmLambda' (params', Simple, body) -> (* WRITTEN BY MAIER! -TODO : FROM chapter 6 slides: page 91 *)
