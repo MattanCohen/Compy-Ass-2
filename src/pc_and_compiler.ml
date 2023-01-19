@@ -1165,14 +1165,14 @@ module Tag_Parser : TAG_PARSER = struct
     | ScmPair (ScmSymbol "and", exprs) ->
       (match (scheme_list_to_ocaml exprs) with
       | expr :: exprs, ScmNil ->
-          tag_parse (macro_expand_and_clauses expr exprs)
+         tag_parse (macro_expand_and_clauses expr exprs)
       | _ -> raise (X_syntax "malformed and-expression"))
-  | ScmPair (ScmSymbol "or", ScmNil) -> ScmConst (ScmBoolean(false))
-  | ScmPair (ScmSymbol "or", ScmPair(expr, ScmNil)) -> tag_parse expr
-  | ScmPair (ScmSymbol "or", exprs) -> 
-    (match (scheme_list_to_ocaml exprs) with
-    | (sexprs', ScmNil) -> ScmOr(List.map tag_parse sexprs')
-    | _ -> raise (X_syntax "malformed or-expr"))
+    | ScmPair (ScmSymbol "or", ScmNil) -> ScmConst (ScmBoolean(false))
+    | ScmPair (ScmSymbol "or", ScmPair(expr, ScmNil)) -> tag_parse expr
+    | ScmPair (ScmSymbol "or", exprs) -> 
+      (match (scheme_list_to_ocaml exprs) with
+      | (sexprs', ScmNil) -> ScmOr(List.map tag_parse sexprs')
+      | _ -> raise (X_syntax "malformed or-expr"))
     | ScmPair (ScmSymbol "cond", ribs) ->
        tag_parse (macro_expand_cond_ribs ribs)
     | ScmPair (proc, args) ->
@@ -2172,22 +2172,22 @@ module Code_Generation : CODE_GENERATION = struct
          in
          
          (*  allocate closure object *)
-         "\tmov rdi, (1 + 8 + 8)\t; sob closure\n"
+         "\tmov rdi, (1 + 8 + 8)\t; lambda simple : sob closure\n"
          ^ "\tcall malloc\n"
          ^ "\tpush rax\n"
 
          (* create ExtEnv *)
          (* create new rib for new env *)
-         ^ (Printf.sprintf "\tmov rdi, 8 * %d\t; new rib\n" params)
+         ^ (Printf.sprintf "\tmov rdi, 8 * %d\t; lambda simple : new rib\n" params)
          ^ "\tcall malloc\n"
          ^ "\tpush rax\n"
          (* copy pointers *)
-         ^ (Printf.sprintf "\tmov rdi, 8 * %d\t; extended env\n" (env + 1))
+         ^ (Printf.sprintf "\tmov rdi, 8 * %d\t; lambda simple : extended env\n" (env + 1))
          ^ "\tcall malloc\n"
          ^ "\tmov rdi, ENV\n"
          ^ "\tmov rsi, 0\n"
          ^ "\tmov rdx, 1\n"
-         ^ (Printf.sprintf "%s:\t; ext_env[i + 1] <-- env[i]\n"
+         ^ (Printf.sprintf "%s:\t; lambda simple : ext_env[i + 1] <-- env[i]\n"
               label_loop_env)
          ^ (Printf.sprintf "\tcmp rsi, %d\n" (env + 1))
          ^ (Printf.sprintf "\tje %s\n" label_loop_env_end)
@@ -2201,7 +2201,7 @@ module Code_Generation : CODE_GENERATION = struct
          ^ "\tpop rbx\n"
          ^ "\tmov rsi, 0\n"
          (* copy parameters off of the stack *)
-         ^ (Printf.sprintf "%s:\t; copy params\n" label_loop_params)
+         ^ (Printf.sprintf "%s:\t; lambda simple : copy params\n" label_loop_params)
          ^ (Printf.sprintf "\tcmp rsi, %d\n" params)
          ^ (Printf.sprintf "\tje %s\n" label_loop_params_end)
          ^ "\tmov rdx, qword [rbp + 8 * rsi + 8 * 4]\n"
@@ -2211,7 +2211,7 @@ module Code_Generation : CODE_GENERATION = struct
          (* end of copy parameters *)
          ^ (Printf.sprintf "%s:\n" label_loop_params_end)
          (* allocate extenv[0] to point to new rib *)
-         ^ "\tmov qword [rax], rbx\t; ext_env[0] <-- new_rib \n"
+         ^ "\tmov qword [rax], rbx\t; lambda simple : ext_env[0] <-- new_rib \n"
          ^ "\tmov rbx, rax\n"
          ^ "\tpop rax\n"
          (* allocate the closure object address in rax *)
@@ -2241,7 +2241,7 @@ module Code_Generation : CODE_GENERATION = struct
          ^ "\tleave\n"
               (* ret *)
          ^ (Printf.sprintf "\tret 8 * (2 + %d)\n" (List.length params'))
-         ^ (Printf.sprintf "%s:\t; new closure is in rax\n" label_end)
+         ^ (Printf.sprintf "%s:\t; lambda simple : new closure is in rax\n" label_end)
       | ScmLambda' (params', Opt opt, body) ->  (*TODO Mattan: FROM chapter 6 slides: page 100 *)
       let label_loop_env = make_lambda_simple_loop_env ()
       and label_loop_env_end = make_lambda_simple_loop_env_end ()
@@ -2259,16 +2259,16 @@ module Code_Generation : CODE_GENERATION = struct
 
       (* create ExtEnv *)
       (* create new rib for new env *)
-      ^ (Printf.sprintf "\tmov rdi, 8 * %d\t; new rib\n" params)
+      ^ (Printf.sprintf "\tmov rdi, 8 * %d\t; LAMBDA OPT new rib\n" params)
       ^ "\tcall malloc\n"
       ^ "\tpush rax\n"
       (* copy pointers *)
-      ^ (Printf.sprintf "\tmov rdi, 8 * %d\t; extended env\n" (env + 1))
+      ^ (Printf.sprintf "\tmov rdi, 8 * %d\t; LAMBDA OPT extended env\n" (env + 1))
       ^ "\tcall malloc\n"
       ^ "\tmov rdi, ENV\n"
       ^ "\tmov rsi, 0\n"
       ^ "\tmov rdx, 1\n"
-      ^ (Printf.sprintf "%s:\t; ext_env[i + 1] <-- env[i]\n"
+      ^ (Printf.sprintf "%s:\t; LAMBDA OPT ext_env[i + 1] <-- env[i]\n"
            label_loop_env)
       ^ (Printf.sprintf "\tcmp rsi, %d\n" (env + 1))
       ^ (Printf.sprintf "\tje %s\n" label_loop_env_end)
@@ -2282,7 +2282,7 @@ module Code_Generation : CODE_GENERATION = struct
       ^ "\tpop rbx\n"
       ^ "\tmov rsi, 0\n"
       (* copy parameters off of the stack *)
-      ^ (Printf.sprintf "%s:\t; copy params\n" label_loop_params)
+      ^ (Printf.sprintf "%s:\t; LAMBDA OPT copy params\n" label_loop_params)
       ^ (Printf.sprintf "\tcmp rsi, %d\n" params)
       ^ (Printf.sprintf "\tje %s\n" label_loop_params_end)
       ^ "\tmov rdx, qword [rbp + 8 * rsi + 8 * 4]\n"
@@ -2292,7 +2292,7 @@ module Code_Generation : CODE_GENERATION = struct
       (* end of copy parameters *)
       ^ (Printf.sprintf "%s:\n" label_loop_params_end)
       (* allocate extenv[0] to point to new rib *)
-      ^ "\tmov qword [rax], rbx\t; ext_env[0] <-- new_rib \n"
+      ^ "\tmov qword [rax], rbx\t; LAMBDA OPT ext_env[0] <-- new_rib \n"
       ^ "\tmov rbx, rax\n"
       ^ "\tpop rax\n"
       (* allocate the closure object address in rax *)
@@ -2304,7 +2304,7 @@ module Code_Generation : CODE_GENERATION = struct
       (* jump Lcont *)
       ^ (Printf.sprintf "\tjmp %s\n" label_end)
       (* Lcode: *)
-      ^ (Printf.sprintf "%s:\t; lambda-simple body\n" label_code)
+      ^ (Printf.sprintf "%s:\t; LAMBDA OPT body\n" label_code)
       
       (* make sure param list is ok *)
       ^ (Printf.sprintf "\tcmp qword [rsp + 8 * 2], %d\n"
@@ -2332,7 +2332,7 @@ module Code_Generation : CODE_GENERATION = struct
       ^ "\tleave\n"
            (* ret *)
       ^ (Printf.sprintf "\tret 8 * (2 + %d)\n" (List.length params'))
-      ^ (Printf.sprintf "%s:\t; new closure is in rax\n" label_end)
+      ^ (Printf.sprintf "%s:\t; new closure is in rax LAMBDA OPT \n" label_end)
       | ScmApplic' (proc, args, Non_Tail_Call) -> (* DONE *)
         let reversed_args = List.rev args in
         let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args)
@@ -2354,7 +2354,7 @@ module Code_Generation : CODE_GENERATION = struct
           "\tmov rcx, COUNT\n" ^
           "\tlea rcx, [rbp + 8*rcx + 8*3]\n" ^
           "\tlea rdx, [rbp - 8*1]\n" ^
-          label_loop ^ "\n" ^
+          (Printf.sprintf "%s:\t; loop in scmapplic\n" label_loop) ^
           "\tcmp rsi, 0\n" ^
           (Printf.sprintf "\tje %s\n" label_done) ^
           "\tmov rdi, qword[rdx]\n" ^
@@ -2363,7 +2363,7 @@ module Code_Generation : CODE_GENERATION = struct
           "\tsub rdx, 8\n" ^
           "\tdec rsi\n" ^
           (Printf.sprintf "\tjmp %s\n" label_loop) ^
-          label_done ^ "\n" ^
+          (Printf.sprintf "%s:\t; loop done in scmapplic\n" label_done) ^
           "\tadd rcx, 8\n" ^ 
           "\tmov rsp, rcx\n"
         in
@@ -2403,7 +2403,11 @@ module Code_Generation : CODE_GENERATION = struct
 
   let compile_scheme_string file_out user =
     let init = file_to_string "init.scm" in
+<<<<<<< Updated upstream
     (*let init = "" in*)
+=======
+    (* let init = "" in *)
+>>>>>>> Stashed changes
     let source_code = init ^ user in
     let sexprs = (PC.star Reader.nt_sexpr source_code 0).found in
     let exprs = List.map Tag_Parser.tag_parse sexprs in
