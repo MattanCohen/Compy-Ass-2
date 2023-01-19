@@ -589,8 +589,8 @@ L_code_ptr_bin_apply:   ; (apply proc list-s) -: recieves 2 arguments
                                 ; else
         assert_pair(rbx)                ; if (rbx is pair)
         ; push SOB_PAIR_CAR(rbx)                  ; push car(rbx) 
-        mov SOB_PAIR_CAR(rbx), [rdx]                  ; push car(rbx) 
-        mov SOB_PAIR_CDR(rbx), rbx              ; rbx = cdr(rbx)
+        mov rdx, SOB_PAIR_CAR(rbx)                  ; car(rbx) -> rdx 
+        mov rbx, SOB_PAIR_CDR(rbx)              ; rbx = cdr(rbx)
         inc rcx                                 ; length(list-s)++
         add rdx, 8
         jmp .Loop1                               ; go to Loop1
