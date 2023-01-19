@@ -2193,7 +2193,7 @@ module Code_Generation : CODE_GENERATION = struct
          ^ "\tmov rdx, 1\n"
          ^ (Printf.sprintf "%s:\t; lambda simple : ext_env[i + 1] <-- env[i]\n"
               label_loop_env)
-         ^ (Printf.sprintf "\tcmp rsi, %d\n" (env + 1))
+         ^ (Printf.sprintf "\tcmp rsi, %d\n" env)
          ^ (Printf.sprintf "\tje %s\n" label_loop_env_end)
          ^ "\tmov rcx, qword [rdi + 8 * rsi]\n"
          ^ "\tmov qword [rax + 8 * rdx], rcx\n"
