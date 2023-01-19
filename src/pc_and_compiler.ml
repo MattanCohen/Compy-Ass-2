@@ -2067,8 +2067,8 @@ module Code_Generation : CODE_GENERATION = struct
            label
       | ScmVarGet' (Var' (v, Param minor)) -> (*DONE : FROM chapter 6 slides: page 77 *)
           Printf.sprintf
-          "\tmov rax, qword [rbp + 8 * (4 + %d)]\n"
-          minor 
+          "\tmov rax, qword [rbp + 8 * %d]\n"
+          (minor + 4)
       | ScmVarGet' (Var' (v, Bound (major, minor))) -> (*DONE MATTAN : FROM chapter 6 slides: page 79 *)
          "\t; performing var get\n"
          ^ "\tmov rax, qword [rpb + 8 * 2]\n"
@@ -2125,7 +2125,7 @@ module Code_Generation : CODE_GENERATION = struct
           let genedExpr = (run params env expr') in 
           "\t;performing var set statement param\n"
           ^ Printf.sprintf "%s\n" genedExpr
-          ^ (Printf.sprintf "\tmov qword[rbp + 8 ∗ (4 + %d)], rax \n" minor)
+          ^ (Printf.sprintf "\tmov qword[rbp + 8 * %d], rax \n" (minor + 4))
           ^ "\tmov rax, sob_void\n"
       | ScmVarSet' (Var' (v, Bound (major, minor)), expr') -> (*DONE Mattan : FROM chapter 6 slides: page 80 *)
           let genedExpr = (run params env expr') in 
@@ -2133,7 +2133,7 @@ module Code_Generation : CODE_GENERATION = struct
           ^ Printf.sprintf "%s\n" genedExpr
           ^ "\tmov rbx, qword[rbp + 8 * 2]\n"
           ^ (Printf.sprintf "\tmov rbx, qword[rbp + 8 * %d]\n" major)
-          ^ (Printf.sprintf "\tmov qword[rbp + 8 ∗ %d], rax \n" minor)
+          ^ (Printf.sprintf "\tmov qword[rbp + 8 * %d], rax \n" minor)
           ^ "\tmov rax, sob_void\n"
       | ScmVarDef' (Var' (v, Free), expr') -> 
          let label = search_free_var_table v free_vars in
