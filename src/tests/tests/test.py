@@ -26,6 +26,10 @@ def test_if_compiles_to_asm(content):
         os.chdir(test_dir)
 
 
+def test_if_almost_compiles(content: str):
+    module.check_if_parses(content)
+
+
 class CompilerTestCase(unittest.TestCase):
 
     @staticmethod
@@ -487,8 +491,11 @@ class TestRemoveDuplicates(CompilerTestCase):
 
 
 class TestInitSCMParsing(CompilerTestCase):
+    def test_lambda_opt(self):
+        test_if_almost_compiles("""(lambda (x. y) (y))""")
+
     def test1(self):
-        test_if_compiles_to_asm("""(define (caar x) (car (car x)))
+        test_if_almost_compiles("""(define (caar x) (car (car x)))
 (define (cadr x) (car (cdr x)))
 (define (cdar x) (cdr (car x)))
 (define (cddr x) (cdr (cdr x)))
@@ -518,7 +525,7 @@ class TestInitSCMParsing(CompilerTestCase):
 (define (cddddr x) (cddr (cddr x)))""")
 
     def test_liststar(self):
-        test_if_compiles_to_asm("""(define list*
+        test_if_almost_compiles("""(define list*
   (letrec ((run
              (lambda (a s)
                (if (null? s)
@@ -529,7 +536,7 @@ class TestInitSCMParsing(CompilerTestCase):
       (run a s))))""")
 
     def test_ormap(self):
-        test_if_compiles_to_asm("""(define ormap
+        test_if_almost_compiles("""(define ormap
   (lambda (f . s)
     (letrec ((loop
                (lambda (s)

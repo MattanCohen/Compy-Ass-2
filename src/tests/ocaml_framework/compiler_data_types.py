@@ -69,5 +69,6 @@ class CodeGenerationModule:
     remove_duplicates:          Callable[[list[T]], list[T]]
     compile_scheme_string:      Callable[[str, str], None]
     compile_scheme_file:        Callable[[str, str], None]
+    check_if_parses:            Callable[[str], bool]
 
 

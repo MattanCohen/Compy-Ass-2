@@ -2403,6 +2403,12 @@ module Code_Generation : CODE_GENERATION = struct
     (string_to_file file_out asm_code;
      Printf.printf "!!! Compilation finished. Time to assemble!\n");;  
 
+
+  let check_if_parses ocaml_content = 
+    let sexprs = (PC.star Reader.nt_sexpr ocaml_content 0).found in
+    let exprs = List.map Tag_Parser.tag_parse sexprs in
+    let exprs' = List.map Semantic_Analysis.semantics exprs in
+    true;;
   let compile_scheme_file file_in file_out =
     compile_scheme_string file_out (file_to_string file_in);;
 
