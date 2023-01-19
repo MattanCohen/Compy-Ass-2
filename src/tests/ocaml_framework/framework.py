@@ -3,6 +3,7 @@ import inspect
 import ocaml
 import pathlib
 from tests.ocaml_framework.compiler_data_types import *
+import os
 
 OCAML_FILES_IN_COMPILING_ORDER = ["src/pc_and_compiler.ml"]
 
@@ -60,7 +61,9 @@ def add_extern_attributes(content: str):
 def compile_and_save(content: str):
     # with open("complied_content.ml", "w") as file:
     #     file.write(content)
-    return ocaml.compile(content)
+    module = ocaml.compile(content)
+    # os.chdir("..")
+    return module
 
 
 compile_module: Callable[[], any] = pipe(compile_and_save, add_extern_attributes, fix_for_tests,

@@ -599,7 +599,7 @@ L_code_ptr_bin_apply:   ; (apply proc list-s) -: recieves 2 arguments
         cmp rdx, 0
         je .End
 
-        push [rdx]
+        push rdx
         add rdx, -8
         jmp .Loop2
 
