@@ -2259,14 +2259,13 @@ module Code_Generation : CODE_GENERATION = struct
          ^ (Printf.sprintf "\tret 8 * (2 + %d)\n" (List.length params'))
          ^ (Printf.sprintf "%s:\t; lambda simple : new closure is in rax\n" label_end)
       | ScmLambda' (params', Opt opt, body) ->  (*TODO Mattan: FROM chapter 6 slides: page 100 *)
-      let label_loop_env = make_lambda_opt_loop_env ()
-      and label_loop_env_end = make_lambda_opt_loop_env_end ()
-      and label_loop_params = make_lambda_opt_loop_params ()
-      and label_loop_params_end = make_lambda_opt_loop_params_end ()
-      and label_code = make_lambda_opt_code ()
-      and label_arity_more = make_lambda_opt_arity_more ()
-      and label_arity_exact = make_lambda_opt_arity_exact ()
-      and label_end = make_lambda_opt_end ()
+      let label_loop_env = make_lambda_simple_loop_env ()
+      and label_loop_env_end = make_lambda_simple_loop_env_end ()
+      and label_loop_params = make_lambda_simple_loop_params ()
+      and label_loop_params_end = make_lambda_simple_loop_params_end ()
+      and label_code = make_lambda_simple_code ()
+      and label_arity_ok = make_lambda_simple_arity_ok ()
+      and label_end = make_lambda_simple_end ()
       in
       
       (*  allocate closure object *)
@@ -2326,7 +2325,7 @@ module Code_Generation : CODE_GENERATION = struct
       (* make sure param list is ok *)
       ^ (Printf.sprintf "\tcmp qword [rsp + 8 * 2], %d\n"
            (List.length params'))
-      ^ (Printf.sprintf "\tje %s\n" label_arity_more)
+      ^ (Printf.sprintf "\tje %s\n" label_arity_ok)
 
       (* there are more arguments than supposed to be *)
       (* here we need to adjust the stack for optional arguments with use of opt *)
@@ -2339,7 +2338,7 @@ module Code_Generation : CODE_GENERATION = struct
 
       (* there are exactly arguments *)
       (* here we need to adjust the stack for optional arguments without use of opt (with nil) *)
-      ^ (Printf.sprintf "%s:\n" label_arity_exact)
+      ^ (Printf.sprintf "%s:\n" label_arity_ok)
            (* push rbp *)
            (* mov rbp, rsp *)
       ^ "\tenter 0, 0\n"
