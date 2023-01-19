@@ -2071,9 +2071,9 @@ module Code_Generation : CODE_GENERATION = struct
           minor 
       | ScmVarGet' (Var' (v, Bound (major, minor))) -> (*DONE MATTAN : FROM chapter 6 slides: page 79 *)
          "\t; performing var get\n"
-         ^ "\tmov rax, qword [rpb + 8 * 2]\n"
-         ^ (Printf.sprintf "\tmov rax, qword [rpb + 8 * %d]\n" major)
-         ^ (Printf.sprintf "\tmov rax, qword [rpb + 8 * %d]\n" minor)
+         ^ "\tmov rax, qword [rbp + 8 * 2]\n"
+         ^ (Printf.sprintf "\tmov rax, qword [rbp + 8 * %d]\n" major)
+         ^ (Printf.sprintf "\tmov rax, qword [rbp + 8 * %d]\n" minor)
 
       | ScmIf' (test, dit, dif) -> (*DONE MATTAN : FROM chapter 6 slides: page 86 *)
         let genedTest = (run params env test) in 
@@ -2083,7 +2083,7 @@ module Code_Generation : CODE_GENERATION = struct
         let exitLabel = make_if_end() in
         "\t; performing if statement\n"
         ^ Printf.sprintf "%s\n" genedTest
-        ^ "\tcmp rax, sob_false\n"
+        ^ "\tcmp rax, sob_boolean_false\n"
         ^ (Printf.sprintf "\tje %s\n" elseLabel)
         ^ Printf.sprintf "%s\n" genedDit
         ^ (Printf.sprintf "\tjmp %s\n" exitLabel)
@@ -2119,41 +2119,43 @@ module Code_Generation : CODE_GENERATION = struct
           let labelInFVarTableV = search_free_var_table v free_vars in 
           "\t; performing free var set statement\n"
           ^ Printf.sprintf "%s\n" genedExpr
-          ^ (Printf.sprintf "\tmov qword[%s], rax \n" labelInFVarTableV)
+          ^ (Printf.sprintf "\tmov qword [%s], rax \n" labelInFVarTableV)
           ^ "\tmov rax, sob_void\n"
       | ScmVarSet' (Var' (v, Param minor), expr') -> (*DONE Mattan : FROM chapter 6 slides: page 78 *)
           let genedExpr = (run params env expr') in 
           "\t;performing var set statement param\n"
           ^ Printf.sprintf "%s\n" genedExpr
-          ^ (Printf.sprintf "\tmov qword[rbp + 8 ∗ (4 + %d)], rax \n" minor)
+          ^ (Printf.sprintf "\tmov qword [rbp + 8 * (4 + %d)], rax \n" minor)
           ^ "\tmov rax, sob_void\n"
       | ScmVarSet' (Var' (v, Bound (major, minor)), expr') -> (*DONE Mattan : FROM chapter 6 slides: page 80 *)
           let genedExpr = (run params env expr') in 
           "\t;performing var set statement bound\n"
           ^ Printf.sprintf "%s\n" genedExpr
-          ^ "\tmov rbx, qword[rbp + 8 * 2]\n"
-          ^ (Printf.sprintf "\tmov rbx, qword[rbp + 8 * %d]\n" major)
-          ^ (Printf.sprintf "\tmov qword[rbp + 8 ∗ %d], rax \n" minor)
+          ^ "\tmov rbx, qword [rbp + 8 * 2]\n"
+          ^ (Printf.sprintf "\tmov rbx, qword [rbp + 8 * %d]\n" major)
+          ^ (Printf.sprintf "\tmov qword [rbp + 8 * %d], rax \n" minor)
           ^ "\tmov rax, sob_void\n"
       | ScmVarDef' (Var' (v, Free), expr') -> 
          let label = search_free_var_table v free_vars in
          (run params env expr')
-         ^ (Printf.sprintf "\tmov qword[%s], rax\n" label)
+         ^ (Printf.sprintf "\tmov qword [%s], rax\n" label)
          ^ "\tmov rax, sob_void\n"
       | ScmVarDef' (Var' (v, Param minor), expr') ->
          raise X_not_yet_supported
       | ScmVarDef' (Var' (v, Bound (major, minor)), expr') ->
          raise X_not_yet_supported
       | ScmBox' (Var' (v, Param minor)) -> (*DONE MATTAN : FROM chapter 6 slides: page 89uz *)
-        "\t mov rdi, byte(8)\n"
-        ^ "\t call malloc\n"
-        ^ Printf.sprintf "\t mov qword[rax], PARAM(%d)\n" minor
-        ^ Printf.sprintf "\t mov PARAM(%d), rax\n" minor
-        ^ "\t mov rax, sob_void \n"
+        "\t mov rdi, 8 \n"
+        (* "" *)
+        ^ "\t call malloc ; call malloc (rax will contain empty box)\n"
+        ^ Printf.sprintf "\t mov rbx, PARAM(%d)\n ; set rbx <- [param(minor)]" minor
+        ^ "\t mov [rax], rbx ; push in malloc's dedicated location value of compied rbx\n"
+        ^ Printf.sprintf "\t mov PARAM(%d), rax ; put the box with the contains in param minor\n" minor
+        ^ "\t mov rax, sob_void ; set rax as void since its setbox\n"
         | ScmBox' _ -> raise (X_this_should_not_happen "ScmBox with nothing should not happen")
       | ScmBoxGet' var' ->
          (run params env (ScmVarGet' var'))
-         ^ "\tmov rax, qword[rax]\n"
+         ^ "\tmov rax, qword [rax]\n"
       | ScmBoxSet' (var', expr') -> (*DONE MATTAN : FROM chapter 6 slides: page 90 *)
         let genedExpr = (run params env expr') in 
         let genedVar = (run params env (ScmVarGet' var')) in 
