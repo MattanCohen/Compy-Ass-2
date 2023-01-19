@@ -2085,9 +2085,9 @@ module Code_Generation : CODE_GENERATION = struct
         ^ "\tje Lelse\n"
         ^ genedDit
         ^ "\tjmp Lexit\n"
-        ^ "\tLelse:\n"
+        ^ "\t.Lelse:\n"
         ^ genedDif
-        ^ "\tLexit:\n"
+        ^ "\t.Lexit:\n"
    | ScmSeq' exprs' -> 
          String.concat "\n"
            (List.map (run params env) exprs')
