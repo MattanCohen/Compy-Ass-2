@@ -18,16 +18,17 @@ def main():
     print("Compiling ocaml...")
     module = compile_module()
     input_scm_file = Path(SCHEME_SRC_FOLDER, SCM_SRC_FILE).absolute().as_posix()
-
+    input_content = Path(input_scm_file).read_text()
     output_asm_file = Path(SCHEME_BUILD_FOLDER, f"{OUTPUT_FILE}.asm").absolute().as_posix()
     print("Input: ", input_scm_file)
-    print("Input content:", "\n", Path(input_scm_file).read_text())
+    print("Input content:", "\n", input_content)
     print("Output: ", output_asm_file)
 
 
     os.chdir("src")
     print("Compiling scheme to asm...")
-    module.compile_scheme_string(output_asm_file, input_scm_file)
+
+    module.compile_scheme_string(output_asm_file, input_content)
 
     print("Compiling asm to ELF...")
     os.system(f"make {OUTPUT_FILE} -C scheme_files/build")
@@ -35,7 +36,7 @@ def main():
     if RUN_AFTER_COMPILING:
         print("Running compiled elf...")
         result = subprocess.run([f"./scheme_files/build/{OUTPUT_FILE}"], stdout=subprocess.PIPE)
-        print(result.stdout)
+        print(result.stdout.decode())
 
 
 
