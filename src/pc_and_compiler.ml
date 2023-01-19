@@ -2403,11 +2403,6 @@ module Code_Generation : CODE_GENERATION = struct
 
   let compile_scheme_string file_out user =
     let init = file_to_string "init.scm" in
-<<<<<<< Updated upstream
-    (*let init = "" in*)
-=======
-    (* let init = "" in *)
->>>>>>> Stashed changes
     let source_code = init ^ user in
     let sexprs = (PC.star Reader.nt_sexpr source_code 0).found in
     let exprs = List.map Tag_Parser.tag_parse sexprs in
