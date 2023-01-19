@@ -2151,7 +2151,7 @@ module Code_Generation : CODE_GENERATION = struct
         ^ "\tpush rax\n"
         ^ genedVar
         ^ "\tpop qword[rax]\n"
-        ^ "\mov rax, sob_void\n"
+        ^ "\tmov rax, sob_void\n"
       | ScmLambda' (params', Simple, body) -> (* WRITTEN BY MAIER! -TODO : FROM chapter 6 slides: page 91 *)
          let label_loop_env = make_lambda_simple_loop_env ()
          and label_loop_env_end = make_lambda_simple_loop_env_end ()
@@ -2393,8 +2393,8 @@ module Code_Generation : CODE_GENERATION = struct
     code;;
 
   let compile_scheme_string file_out user =
-    (*let init = file_to_string "init.scm" in*)
-    let init = "" in
+    let init = file_to_string "init.scm" in
+    (*let init = "" in*)
     let source_code = init ^ user in
     let sexprs = (PC.star Reader.nt_sexpr source_code 0).found in
     let exprs = List.map Tag_Parser.tag_parse sexprs in

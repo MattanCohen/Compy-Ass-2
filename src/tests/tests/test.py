@@ -517,6 +517,16 @@ class TestInitSCMParsing(CompilerTestCase):
 (define (cdddar x) (cddr (cdar x)))
 (define (cddddr x) (cddr (cddr x)))""")
 
+    def test_liststar(self):
+        test_if_compiles_to_asm("""(define list*
+  (letrec ((run
+             (lambda (a s)
+               (if (null? s)
+                   a
+                   (cons a
+                     (run (car s) (cdr s)))))))
+    (lambda (a . s)
+      (run a s))))""")
 
     def test_ormap(self):
         test_if_compiles_to_asm("""(define ormap
