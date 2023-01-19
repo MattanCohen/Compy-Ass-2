@@ -2119,26 +2119,26 @@ module Code_Generation : CODE_GENERATION = struct
           let labelInFVarTableV = search_free_var_table v free_vars in 
           "\t; performing free var set statement\n"
           ^ Printf.sprintf "%s\n" genedExpr
-          ^ (Printf.sprintf "\tmov qword [%s], rax \n" labelInFVarTableV)
+          ^ (Printf.sprintf "\tmov qword[%s], rax \n" labelInFVarTableV)
           ^ "\tmov rax, sob_void\n"
       | ScmVarSet' (Var' (v, Param minor), expr') -> (*DONE Mattan : FROM chapter 6 slides: page 78 *)
           let genedExpr = (run params env expr') in 
-          "\tperforming var set statement\n"
+          "\t;performing var set statement param\n"
           ^ Printf.sprintf "%s\n" genedExpr
-          ^ (Printf.sprintf "\tmov qword [rbp + 8 ∗ (4 + %d)], rax \n" minor)
+          ^ (Printf.sprintf "\tmov qword[rbp + 8 ∗ (4 + %d)], rax \n" minor)
           ^ "\tmov rax, sob_void\n"
       | ScmVarSet' (Var' (v, Bound (major, minor)), expr') -> (*DONE Mattan : FROM chapter 6 slides: page 80 *)
           let genedExpr = (run params env expr') in 
-          "\tperforming var set statement\n"
+          "\t;performing var set statement bound\n"
           ^ Printf.sprintf "%s\n" genedExpr
-          ^ "\tmov rbx, qword [rbp + 8 * 2]\n"
-          ^ (Printf.sprintf "\tmov rbx, qword [rbp + 8 * %d]\n" major)
-          ^ (Printf.sprintf "\tmov qword [rbp + 8 ∗ %d], rax \n" minor)
+          ^ "\tmov rbx, qword[rbp + 8 * 2]\n"
+          ^ (Printf.sprintf "\tmov rbx, qword[rbp + 8 * %d]\n" major)
+          ^ (Printf.sprintf "\tmov qword[rbp + 8 ∗ %d], rax \n" minor)
           ^ "\tmov rax, sob_void\n"
       | ScmVarDef' (Var' (v, Free), expr') -> 
          let label = search_free_var_table v free_vars in
          (run params env expr')
-         ^ (Printf.sprintf "\tmov qword [%s], rax\n" label)
+         ^ (Printf.sprintf "\tmov qword[%s], rax\n" label)
          ^ "\tmov rax, sob_void\n"
       | ScmVarDef' (Var' (v, Param minor), expr') ->
          raise X_not_yet_supported
@@ -2153,7 +2153,7 @@ module Code_Generation : CODE_GENERATION = struct
         | ScmBox' _ -> raise (X_this_should_not_happen "ScmBox with nothing should not happen")
       | ScmBoxGet' var' ->
          (run params env (ScmVarGet' var'))
-         ^ "\tmov rax, qword [rax]\n"
+         ^ "\tmov rax, qword[rax]\n"
       | ScmBoxSet' (var', expr') -> (*DONE MATTAN : FROM chapter 6 slides: page 90 *)
         let genedExpr = (run params env expr') in 
         let genedVar = (run params env (ScmVarGet' var')) in 
