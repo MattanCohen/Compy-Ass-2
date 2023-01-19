@@ -2069,7 +2069,7 @@ module Code_Generation : CODE_GENERATION = struct
       | ScmConst' sexpr -> (*DONE : FROM chapter 6 slides: page 76 *)
         let address = search_constant_address sexpr consts in
         Printf.sprintf
-          "\tmov rax, [%s + %d]\t; is this here?\n"
+          "\tmov rax, %s + %d\t; is this here?\n"
           label_start_of_constants_table
           address
       | ScmVarGet' (Var' (v, Free)) -> (* WRITTEN BY MAIER! -TODO : FROM chapter 6 slides: page 81 *)
