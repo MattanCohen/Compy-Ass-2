@@ -2067,8 +2067,8 @@ module Code_Generation : CODE_GENERATION = struct
            label
       | ScmVarGet' (Var' (v, Param minor)) -> (*DONE : FROM chapter 6 slides: page 77 *)
           Printf.sprintf
-          "\tmov rax, qword [rbp + 8 * (4 + %d)]\n"
-          minor 
+          "\tmov rax, qword [rbp + 8 * %d]\n"
+          (minor + 4)
       | ScmVarGet' (Var' (v, Bound (major, minor))) -> (*DONE MATTAN : FROM chapter 6 slides: page 79 *)
          "\t; performing var get\n"
          ^ "\tmov rax, qword [rbp + 8 * 2]\n"
