@@ -2,12 +2,12 @@ import pathlib
 from zipfile import ZipFile
 
 
-SOURCE_DIR = 'src'
+SOURCE_DIR = '.'
 SUBMISSION_ZIP_NAME = '207382581_316082577'
 INPUT_OCAML_FILE = 'pc_and_compiler.ml'
 COMPILER_OUTPUT_FILE = 'compiler.ml'
 PC_OUTPUT_FILE = 'pc.ml'
-OTHER_INPUT_FILES = ['epilogue.asm', 'init.scm', 'makefile', 'prologue-1.asm', 'prologue-2.asm', 'readme.txt']
+OTHER_INPUT_FILES = ['epilogue.asm', 'init.scm', 'ocaml_files/build/makefile', 'prologue-1.asm', 'prologue-2.asm', 'readme.txt']
 OUTPUT_FILES = OTHER_INPUT_FILES + [PC_OUTPUT_FILE, COMPILER_OUTPUT_FILE]
 
 def split_combined_file() -> tuple[str, str]:
@@ -37,7 +37,8 @@ def main():
 
     with ZipFile(submission_full_zipname, 'w') as zf:
         for output_file in OUTPUT_FILES:
-            zf.write(pathlib.Path(SOURCE_DIR, output_file).absolute(), output_file)
+            file_path = pathlib.Path(SOURCE_DIR, output_file)
+            zf.write(file_path.absolute(), file_path.name)
 
     print(f'done! saved at: {pathlib.Path(submission_full_zipname).absolute()}')
 

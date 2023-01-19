@@ -67,5 +67,6 @@ class CodeGenerationModule:
     collect_free_vars:          Callable[..., any]
     code_gen:                   Callable[..., any]
     remove_duplicates:          Callable[[list[T]], list[T]]
+    compile_scheme_string:      Callable[[str], str]
 
 
