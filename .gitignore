@@ -4,3 +4,5 @@
 207382581_316082577.zip
 src/compiler.ml
 src/pc.ml
+/src/scheme_files/build/*
+!/src/scheme_files/build/makefile
