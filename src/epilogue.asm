@@ -569,9 +569,46 @@ bind_primitive:
         LEAVE
         ret
 
-;; TODO: IMPLEMENT
-;;; PLEASE IMPLEMENT THIS PROCEDURE
-L_code_ptr_bin_apply:
+L_code_ptr_bin_apply:   ; (apply proc list-s) -: recieves 2 arguments
+                        ;                        argument %1 is procedure
+                        ;                        argument %2 is proper list.
+                        ;                        creates w = '(,@s) and applies proc on w
+        enter 0, 0
+        cmp COUNT, 2
+        jne L_error_arg_count_2
+        mov rax, PARAM(0)       ; rax = proc
+        assert_closure(rax)     
+        mov rbx, PARAM(1)       ; rbx = list-s
+        assert_pair(rbx)        
+        mov rcx, 0              ; length(list-s)
+        mov rdx, 0
+
+.Loop1:
+        cmp rbx, T_nil          ; if (rbx == nill)
+        je .Loop2                 ;       go to Loop2
+                                ; else
+        assert_pair(rbx)                ; if (rbx is pair)
+        ; push SOB_PAIR_CAR(rbx)                  ; push car(rbx) 
+        mov rdx, SOB_PAIR_CAR(rbx)                  ; car(rbx) -> rdx 
+        mov rbx, SOB_PAIR_CDR(rbx)              ; rbx = cdr(rbx)
+        inc rcx                                 ; length(list-s)++
+        add rdx, 8
+        jmp .Loop1                               ; go to Loop1
+        
+.Loop2: 
+        cmp rdx, 0
+        je .End
+
+        push [rdx]
+        add rdx, -8
+        jmp .Loop2
+
+.End:
+        push rcx                        ; push list length
+        push SOB_CLOSURE_ENV(rax)       ; push proc env
+        push RET_ADDR                   ; push return address
+        call SOB_CLOSURE_CODE(rax)      ; call proc
+
 	
 L_code_ptr_is_null:
         ENTER

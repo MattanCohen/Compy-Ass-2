@@ -218,7 +218,7 @@ module PC = struct
     ((fun str index ->
       try let ({index_from; index_to; found} as value) = (nt str index)
           in
-          (Printf.printf ";;; %s matched from char %d to char %d, leaving %d chars unread\n"
+          (Printf.printf ";;; %s matchedTODO : FROM char %d to char %d, leaving %d chars unread\n"
 	     desc
 	     index_from index_to
              ((String.length str) - index_to) ;
@@ -1594,7 +1594,7 @@ let rec sexpr_of_expr' = function
        Reader.scheme_sexpr_list_of_sexpr_list
          (List.map sexpr_of_expr' args) in
      ScmPair (proc, args)
-  | _ -> raise X_not_yet_implemented;;
+  | _ -> raise (X_this_should_not_happen "not expr'");;
 
 let string_of_expr' expr =
   Printf.sprintf "%a" Reader.sprint_sexpr (sexpr_of_expr' expr);;
@@ -2042,21 +2042,44 @@ module Code_Generation : CODE_GENERATION = struct
   
 
   (*TODO: IMPLEMENT*)
-  let code_gen exprs' =
+  let rec code_gen exprs' =
     let consts = make_constants_table exprs' in
     let free_vars = make_free_vars_table exprs' in
     let rec run params env = function
-      | ScmConst' sexpr -> raise X_not_yet_implemented
-      | ScmVarGet' (Var' (v, Free)) ->
+      | ScmConst' sexpr -> (*DONE : FROM chapter 6 slides: page 76 *)
+        let address = search_constant_address sexpr consts in
+        Printf.sprintf
+          "\tmov rax, %d\n"
+          address
+      | ScmVarGet' (Var' (v, Free)) -> (* WRITTEN BY MAIER! -TODO : FROM chapter 6 slides: page 81 *)
          let label = search_free_var_table v free_vars in
          Printf.sprintf
            "\tmov rax, qword [%s]\n"
            label
-      | ScmVarGet' (Var' (v, Param minor)) -> raise X_not_yet_implemented
-      | ScmVarGet' (Var' (v, Bound (major, minor))) ->
-         raise X_not_yet_implemented
-      | ScmIf' (test, dit, dif) -> raise X_not_yet_implemented
-      | ScmSeq' exprs' ->
+      | ScmVarGet' (Var' (v, Param minor)) -> (*DONE : FROM chapter 6 slides: page 77 *)
+          Printf.sprintf
+          "\tmov rax, qword [rbp + 8 * (4 + %d)]\n"
+          minor 
+      | ScmVarGet' (Var' (v, Bound (major, minor))) -> (*DONE MATTAN : FROM chapter 6 slides: page 79 *)
+         "\t; performing var get\n"
+         ^ "\tmov rax, qword [rpb + 8 * 2]\n"
+         ^ (Printf.sprintf "\tmov rax, qword [rpb + 8 * %d]\n" major)
+         ^ (Printf.sprintf "\tmov rax, qword [rpb + 8 * %d]\n" minor)
+
+      | ScmIf' (test, dit, dif) -> (*DONE MATTAN : FROM chapter 6 slides: page 86 *)
+        let genedTest = (run params env test) in 
+        let genedDit = (run params env dit) in 
+        let genedDif = (run params env dif) in 
+        "\t; performing if statement\n"
+        ^ genedTest
+        ^ "\tcmp rax, sob_false\n"
+        ^ "\tje Lelse\n"
+        ^ genedDit
+        ^ "\tjmp Lexit\n"
+        ^ "\tLelse:\n"
+        ^ genedDif
+        ^ "\tLexit:\n"
+   | ScmSeq' exprs' -> 
          String.concat "\n"
            (List.map (run params env) exprs')
       | ScmOr' exprs' ->
@@ -2080,13 +2103,28 @@ module Code_Generation : CODE_GENERATION = struct
             (* and just in case someone messed up the tag-parser: *)
             | None -> run params env (ScmConst' (ScmBoolean false)))
          in asm_code
-      | ScmVarSet' (Var' (v, Free), expr') ->
-         raise X_not_yet_implemented
-      | ScmVarSet' (Var' (v, Param minor), expr') ->
-         raise X_not_yet_implemented
-      | ScmVarSet' (Var' (v, Bound (major, minor)), expr') ->
-         raise X_not_yet_implemented
-      | ScmVarDef' (Var' (v, Free), expr') ->
+      | ScmVarSet' (Var' (v, Free), expr') -> (*DONE Mattan : FROM chapter 6 slides: page 82 *)
+          let genedExpr = (run params env expr') in
+          let labelInFVarTableV = search_free_var_table v free_vars in 
+          "\t; performing free var set statement\n"
+          ^ genedExpr
+          ^ (Printf.sprintf "\tmov qword [%s], rax \n" labelInFVarTableV)
+          ^ "\tmov rax, sob_void\n"
+      | ScmVarSet' (Var' (v, Param minor), expr') -> (*DONE Mattan : FROM chapter 6 slides: page 78 *)
+          let genedExpr = (run params env expr') in 
+          "\tperforming var set statement\n"
+          ^ genedExpr
+          ^ (Printf.sprintf "\tmov qword [rbp + 8 ∗ (4 + %d)], rax \n" minor)
+          ^ "\tmov rax, sob_void\n"
+      | ScmVarSet' (Var' (v, Bound (major, minor)), expr') -> (*DONE Mattan : FROM chapter 6 slides: page 80 *)
+          let genedExpr = (run params env expr') in 
+          "\tperforming var set statement\n"
+          ^ genedExpr
+          ^ "\tmov rbx, qword [rbp + 8 * 2]\n"
+          ^ (Printf.sprintf "\tmov rbx, qword [rbp + 8 * %d]\n" major)
+          ^ (Printf.sprintf "\tmov qword [rbp + 8 ∗ %d], rax \n" minor)
+          ^ "\tmov rax, sob_void\n"
+      | ScmVarDef' (Var' (v, Free), expr') -> 
          let label = search_free_var_table v free_vars in
          (run params env expr')
          ^ (Printf.sprintf "\tmov qword [%s], rax\n" label)
@@ -2095,13 +2133,26 @@ module Code_Generation : CODE_GENERATION = struct
          raise X_not_yet_supported
       | ScmVarDef' (Var' (v, Bound (major, minor)), expr') ->
          raise X_not_yet_supported
-      | ScmBox' (Var' (v, Param minor)) -> raise X_not_yet_implemented
-      | ScmBox' _ -> raise X_not_yet_implemented
+      | ScmBox' (Var' (v, Param minor)) -> (*DONE MATTAN : FROM chapter 6 slides: page 89uz *)
+        "\t mov rdi, byte(8)\n"
+        ^ "\t call malloc\n"
+        ^ Printf.sprintf "\t mov qword[rax], PARAM(%d)\n" minor
+        ^ Printf.sprintf "\t mov PARAM(%d), rax\n" minor
+        ^ "\t mov rax, sob_void \n"
+        | ScmBox' _ -> raise (X_this_should_not_happen "ScmBox with nothing should not happen")
       | ScmBoxGet' var' ->
          (run params env (ScmVarGet' var'))
          ^ "\tmov rax, qword [rax]\n"
-      | ScmBoxSet' (var', expr') -> raise X_not_yet_implemented
-      | ScmLambda' (params', Simple, body) ->
+      | ScmBoxSet' (var', expr') -> (*DONE MATTAN : FROM chapter 6 slides: page 90 *)
+        let genedExpr = (run params env expr') in 
+        let genedVar = (run params env (ScmVarGet' var')) in 
+        "\t; performing box set statement\n"
+        ^ genedExpr
+        ^ "\tpush rax\n"
+        ^ genedVar
+        ^ "\tpop qword[rax]\n"
+        ^ "\mov rax, sob_void\n"
+      | ScmLambda' (params', Simple, body) -> (* WRITTEN BY MAIER! -TODO : FROM chapter 6 slides: page 91 *)
          let label_loop_env = make_lambda_simple_loop_env ()
          and label_loop_env_end = make_lambda_simple_loop_env_end ()
          and label_loop_params = make_lambda_simple_loop_params ()
@@ -2110,12 +2161,18 @@ module Code_Generation : CODE_GENERATION = struct
          and label_arity_ok = make_lambda_simple_arity_ok ()
          and label_end = make_lambda_simple_end ()
          in
+         
+         (*  allocate closure object *)
          "\tmov rdi, (1 + 8 + 8)\t; sob closure\n"
          ^ "\tcall malloc\n"
          ^ "\tpush rax\n"
+
+         (* create ExtEnv *)
+         (* create new rib for new env *)
          ^ (Printf.sprintf "\tmov rdi, 8 * %d\t; new rib\n" params)
          ^ "\tcall malloc\n"
          ^ "\tpush rax\n"
+         (* copy pointers *)
          ^ (Printf.sprintf "\tmov rdi, 8 * %d\t; extended env\n" (env + 1))
          ^ "\tcall malloc\n"
          ^ "\tmov rdi, ENV\n"
@@ -2130,9 +2187,11 @@ module Code_Generation : CODE_GENERATION = struct
          ^ "\tinc rsi\n"
          ^ "\tinc rdx\n"
          ^ (Printf.sprintf "\tjmp %s\n" label_loop_env)
+         (* end of copy pointers *)
          ^ (Printf.sprintf "%s:\n" label_loop_env_end)
          ^ "\tpop rbx\n"
          ^ "\tmov rsi, 0\n"
+         (* copy parameters off of the stack *)
          ^ (Printf.sprintf "%s:\t; copy params\n" label_loop_params)
          ^ (Printf.sprintf "\tcmp rsi, %d\n" params)
          ^ (Printf.sprintf "\tje %s\n" label_loop_params_end)
@@ -2140,15 +2199,23 @@ module Code_Generation : CODE_GENERATION = struct
          ^ "\tmov qword [rbx + 8 * rsi], rdx\n"
          ^ "\tinc rsi\n"
          ^ (Printf.sprintf "\tjmp %s\n" label_loop_params)
+         (* end of copy parameters *)
          ^ (Printf.sprintf "%s:\n" label_loop_params_end)
+         (* allocate extenv[0] to point to new rib *)
          ^ "\tmov qword [rax], rbx\t; ext_env[0] <-- new_rib \n"
          ^ "\tmov rbx, rax\n"
          ^ "\tpop rax\n"
+         (* allocate the closure object address in rax *)
          ^ "\tmov byte [rax], T_closure\n"
+         (* set rax -> env = extenv *)
          ^ "\tmov SOB_CLOSURE_ENV(rax), rbx\n"
+         (* set rax -> code = Lcode *)
          ^ (Printf.sprintf "\tmov SOB_CLOSURE_CODE(rax), %s\n" label_code)
+         (* jump Lcont *)
          ^ (Printf.sprintf "\tjmp %s\n" label_end)
+         (* Lcode: *)
          ^ (Printf.sprintf "%s:\t; lambda-simple body\n" label_code)
+              (* make sure param list is ok *)
          ^ (Printf.sprintf "\tcmp qword [rsp + 8 * 2], %d\n"
               (List.length params'))
          ^ (Printf.sprintf "\tje %s\n" label_arity_ok)
@@ -2156,14 +2223,151 @@ module Code_Generation : CODE_GENERATION = struct
          ^ (Printf.sprintf "\tpush %d\n" (List.length params'))
          ^ "\tjmp L_error_incorrect_arity_simple\n"
          ^ (Printf.sprintf "%s:\n" label_arity_ok)
+              (* push rbp *)
+              (* mov rbp, rsp *)
          ^ "\tenter 0, 0\n"
+              (* [[body]] *)
          ^ (run (List.length params') (env + 1) body)
+              (* leave *)
          ^ "\tleave\n"
+              (* ret *)
          ^ (Printf.sprintf "\tret 8 * (2 + %d)\n" (List.length params'))
          ^ (Printf.sprintf "%s:\t; new closure is in rax\n" label_end)
-      | ScmLambda' (params', Opt opt, body) -> raise X_not_yet_implemented
-      | ScmApplic' (proc, args, Non_Tail_Call) -> raise X_not_yet_implemented
-      | ScmApplic' (proc, args, Tail_Call) -> raise X_not_yet_implemented
+      | ScmLambda' (params', Opt opt, body) ->  (*TODO Mattan: FROM chapter 6 slides: page 100 *)
+      let label_loop_env = make_lambda_simple_loop_env ()
+      and label_loop_env_end = make_lambda_simple_loop_env_end ()
+      and label_loop_params = make_lambda_simple_loop_params ()
+      and label_loop_params_end = make_lambda_simple_loop_params_end ()
+      and label_code = make_lambda_simple_code ()
+      and label_arity_ok = make_lambda_simple_arity_ok ()
+      and label_end = make_lambda_simple_end ()
+      in
+      
+      (*  allocate closure object *)
+      "\tmov rdi, (1 + 8 + 8)\t; sob closure\n"
+      ^ "\tcall malloc\n"
+      ^ "\tpush rax\n"
+
+      (* create ExtEnv *)
+      (* create new rib for new env *)
+      ^ (Printf.sprintf "\tmov rdi, 8 * %d\t; new rib\n" params)
+      ^ "\tcall malloc\n"
+      ^ "\tpush rax\n"
+      (* copy pointers *)
+      ^ (Printf.sprintf "\tmov rdi, 8 * %d\t; extended env\n" (env + 1))
+      ^ "\tcall malloc\n"
+      ^ "\tmov rdi, ENV\n"
+      ^ "\tmov rsi, 0\n"
+      ^ "\tmov rdx, 1\n"
+      ^ (Printf.sprintf "%s:\t; ext_env[i + 1] <-- env[i]\n"
+           label_loop_env)
+      ^ (Printf.sprintf "\tcmp rsi, %d\n" (env + 1))
+      ^ (Printf.sprintf "\tje %s\n" label_loop_env_end)
+      ^ "\tmov rcx, qword [rdi + 8 * rsi]\n"
+      ^ "\tmov qword [rax + 8 * rdx], rcx\n"
+      ^ "\tinc rsi\n"
+      ^ "\tinc rdx\n"
+      ^ (Printf.sprintf "\tjmp %s\n" label_loop_env)
+      (* end of copy pointers *)
+      ^ (Printf.sprintf "%s:\n" label_loop_env_end)
+      ^ "\tpop rbx\n"
+      ^ "\tmov rsi, 0\n"
+      (* copy parameters off of the stack *)
+      ^ (Printf.sprintf "%s:\t; copy params\n" label_loop_params)
+      ^ (Printf.sprintf "\tcmp rsi, %d\n" params)
+      ^ (Printf.sprintf "\tje %s\n" label_loop_params_end)
+      ^ "\tmov rdx, qword [rbp + 8 * rsi + 8 * 4]\n"
+      ^ "\tmov qword [rbx + 8 * rsi], rdx\n"
+      ^ "\tinc rsi\n"
+      ^ (Printf.sprintf "\tjmp %s\n" label_loop_params)
+      (* end of copy parameters *)
+      ^ (Printf.sprintf "%s:\n" label_loop_params_end)
+      (* allocate extenv[0] to point to new rib *)
+      ^ "\tmov qword [rax], rbx\t; ext_env[0] <-- new_rib \n"
+      ^ "\tmov rbx, rax\n"
+      ^ "\tpop rax\n"
+      (* allocate the closure object address in rax *)
+      ^ "\tmov byte [rax], T_closure\n"
+      (* set rax -> env = extenv *)
+      ^ "\tmov SOB_CLOSURE_ENV(rax), rbx\n"
+      (* set rax -> code = Lcode *)
+      ^ (Printf.sprintf "\tmov SOB_CLOSURE_CODE(rax), %s\n" label_code)
+      (* jump Lcont *)
+      ^ (Printf.sprintf "\tjmp %s\n" label_end)
+      (* Lcode: *)
+      ^ (Printf.sprintf "%s:\t; lambda-simple body\n" label_code)
+      
+      (* make sure param list is ok *)
+      ^ (Printf.sprintf "\tcmp qword [rsp + 8 * 2], %d\n"
+           (List.length params'))
+      ^ (Printf.sprintf "\tje %s\n" label_arity_ok)
+
+      (* there are more arguments than supposed to be *)
+      (* here we need to adjust the stack for optional arguments with use of opt *)
+
+      (* this throws an error becuase of count num*)
+      ^ "\tpush qword [rsp + 8 * 2]\n"
+      ^ (Printf.sprintf "\tpush %d\n" (List.length params'))
+      ^ "\tjmp L_error_incorrect_arity_simple\n"
+
+
+      (* there are exactly arguments *)
+      (* here we need to adjust the stack for optional arguments without use of opt (with nil) *)
+      ^ (Printf.sprintf "%s:\n" label_arity_ok)
+           (* push rbp *)
+           (* mov rbp, rsp *)
+      ^ "\tenter 0, 0\n"
+           (* [[body]] *)
+      ^ (run (List.length params') (env + 1) body)
+           (* leave *)
+      ^ "\tleave\n"
+           (* ret *)
+      ^ (Printf.sprintf "\tret 8 * (2 + %d)\n" (List.length params'))
+      ^ (Printf.sprintf "%s:\t; new closure is in rax\n" label_end)
+      | ScmApplic' (proc, args, Non_Tail_Call) -> (* DONE *)
+        let reversed_args = List.rev args in
+        let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args)
+        in
+        per_arg_exps ^ 
+        Printf.sprintf "\tpush %d\n" (List.length args) ^
+        (run params env proc) ^
+        "\n\tassert_closure(rax)\n" ^
+        "\tcall SOB_CLOSURE_ENV(rax)\n" ^
+        "\tcall SOB_CLOSURE_CODE(rax)\n"
+
+      | ScmApplic' (proc, args, Tail_Call) -> (*TODO Nadav: FROM chapter 6 slides: page 108 *)
+        let argc = List.length args in
+        let label_loop = make_tc_applic_recycle_frame_loop() in
+        let label_done = make_tc_applic_recycle_frame_done() in
+        let reversed_args = List.rev args in
+        let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args) in
+        let fix_stack = (Printf.sprintf "\tmov rsi, %d\n" (argc + 4)) ^
+          "\tmov rcx, COUNT\n" ^
+          "\tlea rcx, [rbp + 8*rcx + 8*3]\n" ^
+          "\tlea rdx, [rbp - 8*1]\n" ^
+          label_loop ^ "\n" ^
+          "\tcmp rsi, 0\n" ^
+          (Printf.sprintf "\tje %s\n" label_done) ^
+          "\tmov rdi, qword[rdx]\n" ^
+          "\tmov qword[rcx], rdi\n" ^
+          "\tsub rcx, 8\n" ^
+          "\tsub rdx, 8\n" ^
+          "\tdec rsi\n" ^
+          (Printf.sprintf "\tjmp %s\n" label_loop) ^
+          label_done ^ "\n" ^
+          "\tadd rcx, 8\n" ^ 
+          "\tmov rsp, rcx\n"
+        in
+        per_arg_exps ^ 
+        (Printf.sprintf "\tpush %d\n" argc )^
+        (run params env proc) ^
+        "\n\tassert_closure(rax)\n" ^ 
+        "\tpush qword [rbp + 8*1]\n" ^
+        "\tpush qword [rbp]\n" ^
+        fix_stack ^
+        "\tpop rbp ; restore the old rbp\n" ^
+        "\tjmp SOB_CLOSURE_CODE(rax)\n"
+        
     and runs params env exprs' =
       List.map
         (fun expr' ->
