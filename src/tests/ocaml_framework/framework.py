@@ -4,7 +4,7 @@ import ocaml
 import pathlib
 from tests.ocaml_framework.compiler_data_types import *
 
-OCAML_FILES_IN_COMPILING_ORDER = ["pc_and_compiler.ml"]
+OCAML_FILES_IN_COMPILING_ORDER = ["src/pc_and_compiler.ml"]
 
 T1 = TypeVar("T1")
 T2 = TypeVar("T2")
