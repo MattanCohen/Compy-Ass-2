@@ -2048,17 +2048,28 @@ module Code_Generation : CODE_GENERATION = struct
     make_make_label ".L_tc_recycle_frame_loop";;
   let make_tc_applic_recycle_frame_done =
     make_make_label ".L_tc_recycle_frame_done";;
-  
+  (*let get_sexp: constant_entry -> sexpr = fun entry -> match entry with
+      (sexp, _ , _) -> sexp;;
+  let get_address: constant_entry -> int = fun entry -> match entry with
+      (_, address, _) -> address;;*)
+  let rec const_table_to_string: (constants_table -> string) = function
+    | [] -> ""
+    | first :: rest -> (Printf.sprintf "sexp: %s, address: %d\n%s" 
+      (string_of_sexpr (get_sexp first))
+      (get_address first) 
+      (const_table_to_string rest))
+    
 
   (*TODO: IMPLEMENT*)
   let rec code_gen exprs' =
     let consts = make_constants_table exprs' in
+    let _ = print_endline (const_table_to_string consts) in
     let free_vars = make_free_vars_table exprs' in
     let rec run params env = function
       | ScmConst' sexpr -> (*DONE : FROM chapter 6 slides: page 76 *)
         let address = search_constant_address sexpr consts in
         Printf.sprintf
-          "\tmov rax, %d\n"
+          "\tmov rax, %d\t; is this here?\n"
           address
       | ScmVarGet' (Var' (v, Free)) -> (* WRITTEN BY MAIER! -TODO : FROM chapter 6 slides: page 81 *)
          let label = search_free_var_table v free_vars in
@@ -2182,7 +2193,7 @@ module Code_Generation : CODE_GENERATION = struct
 
          (* create ExtEnv *)
          (* create new rib for new env *)
-         ^ (Printf.sprintf "\tmov rdi, 8 * %d\t; lambda simple : new rib\n" params)
+         ^ (Printf.sprintf "\tmov rdi, 8 * %d\t; lambda simple : new rib\n" (List.length params'))
          ^ "\tcall malloc\n"
          ^ "\tpush rax\n"
          (* copy pointers *)
