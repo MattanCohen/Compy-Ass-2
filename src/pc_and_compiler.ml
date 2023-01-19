@@ -1172,7 +1172,7 @@ module Tag_Parser : TAG_PARSER = struct
   | ScmPair (ScmSymbol "or", exprs) -> 
     (match (scheme_list_to_ocaml exprs) with
     | (sexprs', ScmNil) -> ScmOr(List.map tag_parse sexprs')
-    | _ -> raise (X_syntax "Improper or expr"))
+    | _ -> raise (X_syntax "malformed or-expr"))
     | ScmPair (ScmSymbol "cond", ribs) ->
        tag_parse (macro_expand_cond_ribs ribs)
     | ScmPair (proc, args) ->
