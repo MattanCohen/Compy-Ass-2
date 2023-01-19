@@ -1079,7 +1079,7 @@ module Tag_Parser : TAG_PARSER = struct
         ScmPair (ScmSymbol "let", ScmPair (inits, sets)) in
 
 
-    match sexpr with
+    let rec run = function
     | ScmVoid | ScmBoolean _ | ScmChar _ | ScmString _ | ScmNumber _ ->
        ScmConst sexpr
     | ScmPair (ScmSymbol "quote", ScmPair (sexpr, ScmNil)) ->
@@ -1165,7 +1165,14 @@ module Tag_Parser : TAG_PARSER = struct
     | ScmPair (ScmSymbol "and", exprs) ->
       (match (scheme_list_to_ocaml exprs) with
       | expr :: exprs, ScmNil ->
-         tag_parse (macro_expand_and_clauses expr exprs))
+          tag_parse (macro_expand_and_clauses expr exprs)
+      | _ -> raise (X_syntax "malformed and-expression"))
+  | ScmPair (ScmSymbol "or", ScmNil) -> ScmConst (ScmBoolean(false))
+  | ScmPair (ScmSymbol "or", ScmPair(expr, ScmNil)) -> tag_parse expr
+  | ScmPair (ScmSymbol "or", exprs) -> 
+    (match (scheme_list_to_ocaml exprs) with
+    | (sexprs', ScmNil) -> ScmOr(List.map tag_parse sexprs')
+    | _ -> raise (X_syntax "Improper or expr"))
     | ScmPair (ScmSymbol "cond", ribs) ->
        tag_parse (macro_expand_cond_ribs ribs)
     | ScmPair (proc, args) ->
@@ -1173,7 +1180,7 @@ module Tag_Parser : TAG_PARSER = struct
          (match proc with
           | ScmSymbol var ->
              if (is_reserved_word var)
-             then raise (X_syntax "reserved word in proc position")
+             then raise (X_syntax (Printf.sprintf "reserved word in proc position: %s" var))
              else proc
           | proc -> proc) in
        (match (scheme_list_to_ocaml args) with
@@ -1183,7 +1190,9 @@ module Tag_Parser : TAG_PARSER = struct
     | sexpr -> raise (X_syntax
                        (Printf.sprintf
                           "Unknown form in tag parser: \n%a\n"
-                          Reader.sprint_sexpr sexpr));;
+                          Reader.sprint_sexpr sexpr)) in
+    
+    run sexpr;;
 
   
   

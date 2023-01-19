@@ -492,7 +492,7 @@ class TestRemoveDuplicates(CompilerTestCase):
 
 class TestInitSCMParsing(CompilerTestCase):
     def test_lambda_opt(self):
-        test_if_almost_compiles("""(lambda (x. y) (y))""")
+        test_if_almost_compiles("""(lambda (x . y) (y))""")
 
     def test1(self):
         test_if_almost_compiles("""(define (caar x) (car (car x)))
@@ -515,7 +515,7 @@ class TestInitSCMParsing(CompilerTestCase):
 (define (cadadr x) (cadr (cadr x)))
 (define (caddar x) (cadr (cdar x)))
 (define (cadddr x) (cadr (cddr x)))
-(define (cdaaar x) (cdar (caar x)))
+(define (cdaaar x) (cdaclr (caar x)))
 (define (cdaadr x) (cdar (cadr x)))
 (define (cdadar x) (cdar (cdar x)))
 (define (cdaddr x) (cdar (cddr x)))
