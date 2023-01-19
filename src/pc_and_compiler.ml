@@ -2079,15 +2079,17 @@ module Code_Generation : CODE_GENERATION = struct
         let genedTest = (run params env test) in 
         let genedDit = (run params env dit) in 
         let genedDif = (run params env dif) in 
+        let elseLabel = make_if_else() in
+        let exitLabel = make_if_end() in
         "\t; performing if statement\n"
         ^ Printf.sprintf "%s\n" genedTest
         ^ "\tcmp rax, sob_false\n"
-        ^ "\tje .LelseIf\n"
+        ^ (Printf.sprintf "\tje %s\n" elseLabel)
         ^ Printf.sprintf "%s\n" genedDit
-        ^ "\tjmp LexitIf\n"
-        ^ ".LelseIf:\n"
+        ^ (Printf.sprintf "\tjmp %s\n" exitLabel)
+        ^ (Printf.sprintf "%s:\n" elseLabel)
         ^ Printf.sprintf "%s\n" genedDif
-        ^ ".LexitIf:\n"
+        ^ (Printf.sprintf "%s:\n" exitLabel)
    | ScmSeq' exprs' -> 
          String.concat "\n"
            (List.map (run params env) exprs')
