@@ -1697,8 +1697,7 @@ module Code_Generation : CODE_GENERATION = struct
   (* TODO: TEST *)
   let collect_constants exprs' =
     let rec runs: expr' list -> sexpr list = fun exprs' -> List.flatten (List.map run exprs')
-      and run: expr' -> sexpr list = fun expr' ->
-        match expr' with
+      and run: expr' -> sexpr list = function
           | ScmConst' sexpr -> [sexpr]
           | ScmVarGet' _ 
           | ScmVarSet' _ 
@@ -2178,7 +2177,8 @@ module Code_Generation : CODE_GENERATION = struct
         ^ "\tpop qword[rax]\n"
         ^ "\tmov rax, sob_void\n"
       | ScmLambda' (params', Simple, body) -> (* WRITTEN BY MAIER! -TODO : FROM chapter 6 slides: page 91 *)
-         let label_loop_env = make_lambda_simple_loop_env ()
+        let _ = print_endline " ScmLambda' Simple called"
+         and label_loop_env = make_lambda_simple_loop_env ()
          and label_loop_env_end = make_lambda_simple_loop_env_end ()
          and label_loop_params = make_lambda_simple_loop_params ()
          and label_loop_params_end = make_lambda_simple_loop_params_end ()
@@ -2259,7 +2259,8 @@ module Code_Generation : CODE_GENERATION = struct
          ^ (Printf.sprintf "\tret 8 * (2 + %d)\n" (List.length params'))
          ^ (Printf.sprintf "%s:\t; lambda simple : new closure is in rax\n" label_end)
       | ScmLambda' (params', Opt opt, body) ->  (*TODO Mattan: FROM chapter 6 slides: page 100 *)
-          let label_loop_env = make_lambda_opt_loop_env ()
+          let _ = print_endline " ScmLambda' OPT called"
+          and label_loop_env = make_lambda_opt_loop_env ()
           and label_loop_env_end = make_lambda_opt_loop_env_end ()
           and label_copy_params_loop = make_lambda_opt_loop_params ()
           and label_copy_params_loop_exit = make_lambda_opt_loop_params_end ()
@@ -2420,8 +2421,9 @@ module Code_Generation : CODE_GENERATION = struct
           ^ (Printf.sprintf "\tret AND_KILL_FRAME(%d )\n" count)
           ^ (Printf.sprintf "%s:\t; lambda opt : new closure is in rax\n" label_end)
 
-
+      | ScmApplic' (proc, args, Tail_Call)
       | ScmApplic' (proc, args, Non_Tail_Call) -> (* DONE *)
+        let _ = print_endline " ScmApplic' NON_TAIL called" in
         let reversed_args = List.rev args in
         let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args)
         in
@@ -2433,6 +2435,7 @@ module Code_Generation : CODE_GENERATION = struct
         "\tcall SOB_CLOSURE_CODE(rax)\n"
 
       | ScmApplic' (proc, args, Tail_Call) -> (*TODO Nadav: FROM chapter 6 slides: page 108 *)
+        let _ = print_endline " ScmLambda' TAIL called" in
         let argc = List.length args in
         let label_loop = make_tc_applic_recycle_frame_loop() in
         let label_done = make_tc_applic_recycle_frame_done() in
