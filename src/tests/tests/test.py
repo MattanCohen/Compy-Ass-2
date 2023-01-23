@@ -489,6 +489,16 @@ class TestRemoveDuplicates(CompilerTestCase):
     def test2(self):
         self.assertEqual(list(module.remove_duplicates([1, 2, 1])), [1, 2])
 
+def full_parse(exp: str, index_from: int = 0):
+    return module.tag_parse(module.nt_sexpr(exp, index_from).found)
+
+class TestLetAndLambda(CompilerTestCase):
+    let_exp = full_parse("(let ((x 5)) (let ((y 2)) x))")
+    letstar_exp = full_parse("(let* ((x 5) (y 2)) x)")
+    print(let_exp)
+    print(letstar_exp)
+    
+
 
 class TestInitSCMParsing(CompilerTestCase):
     def test_lambda_opt(self):
