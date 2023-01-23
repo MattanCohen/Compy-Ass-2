@@ -1079,7 +1079,7 @@ module Tag_Parser : TAG_PARSER = struct
         ScmPair (ScmSymbol "let", ScmPair (inits, sets)) in
 
 
-    let rec run = function
+    let rec run = fun sexpression -> match sexpression with
     | ScmVoid | ScmBoolean _ | ScmChar _ | ScmString _ | ScmNumber _ ->
        ScmConst sexpr
     | ScmPair (ScmSymbol "quote", ScmPair (sexpr, ScmNil)) ->
@@ -1180,7 +1180,7 @@ module Tag_Parser : TAG_PARSER = struct
          (match proc with
           | ScmSymbol var ->
              if (is_reserved_word var)
-             then raise (X_syntax (Printf.sprintf "reserved word in proc position: %s" var))
+             then raise (X_syntax (Printf.sprintf "reserved word in proc position: %s\nsexp is: %s" var (string_of_sexpr sexpression)))
              else proc
           | proc -> proc) in
        (match (scheme_list_to_ocaml args) with
@@ -2429,7 +2429,7 @@ module Code_Generation : CODE_GENERATION = struct
         Printf.sprintf "\tpush %d\n" (List.length args) ^
         (run params env proc) ^
         "\n\tassert_closure(rax)\n" ^
-        "\tcall SOB_CLOSURE_ENV(rax)\n" ^
+        "\tpush SOB_CLOSURE_ENV(rax)\n" ^
         "\tcall SOB_CLOSURE_CODE(rax)\n"
 
       | ScmApplic' (proc, args, Tail_Call) -> (*TODO Nadav: FROM chapter 6 slides: page 108 *)
