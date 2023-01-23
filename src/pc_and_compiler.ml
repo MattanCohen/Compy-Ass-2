@@ -2057,14 +2057,58 @@ module Code_Generation : CODE_GENERATION = struct
       (string_of_sexpr (get_sexp first))
       (get_address first) 
       (const_table_to_string rest))
-    
+  let should_optimize_tail_calls = false;;
 
   (*TODO: IMPLEMENT*)
   let rec code_gen exprs' =
     let consts = make_constants_table exprs' in
     let _ = print_endline (const_table_to_string consts) in
     let free_vars = make_free_vars_table exprs' in
-    let rec run params env = function
+    let rec gen_non_tail_calls = fun params env proc args ->
+        let _ = print_endline " ScmApplic' NON_TAIL called" in
+        let reversed_args = List.rev args in
+        let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args)
+        in
+        per_arg_exps ^ 
+        Printf.sprintf "\tpush %d\n" (List.length args) ^
+        (run params env proc) ^
+        "\n\tassert_closure(rax)\n" ^
+        "\tpush SOB_CLOSURE_ENV(rax)\n" ^
+        "\tcall SOB_CLOSURE_CODE(rax)\n"
+      and gen_tail_calls =  fun params env proc args -> (*TODO Nadav: FROM chapter 6 slides: page 108 *)
+        let _ = print_endline " ScmLambda' TAIL called" in
+        let argc = List.length args in
+        let label_loop = make_tc_applic_recycle_frame_loop() in
+        let label_done = make_tc_applic_recycle_frame_done() in
+        let reversed_args = List.rev args in
+        let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args) in
+        let fix_stack = (Printf.sprintf "\tmov rsi, %d\n" (argc + 4)) ^
+          "\tmov rcx, COUNT\n" ^
+          "\tlea rcx, [rbp + 8*rcx + 8*3]\n" ^
+          "\tlea rdx, [rbp - 8*1]\n" ^
+          (Printf.sprintf "%s:\t; loop in scmapplic\n" label_loop) ^
+          "\tcmp rsi, 0\n" ^
+          (Printf.sprintf "\tje %s\n" label_done) ^
+          "\tmov rdi, qword[rdx]\n" ^
+          "\tmov qword[rcx], rdi\n" ^
+          "\tsub rcx, 8\n" ^
+          "\tsub rdx, 8\n" ^
+          "\tdec rsi\n" ^
+          (Printf.sprintf "\tjmp %s\n" label_loop) ^
+          (Printf.sprintf "%s:\t; loop done in scmapplic\n" label_done) ^
+          "\tadd rcx, 8\n" ^ 
+          "\tmov rsp, rcx\n"
+        in
+        per_arg_exps ^ 
+        (Printf.sprintf "\tpush %d\n" argc )^
+        (run params env proc) ^
+        "\n\tassert_closure(rax)\n" ^ 
+        "\tpush qword [rbp + 8*1]\n" ^
+        "\tpush qword [rbp]\n" ^
+        fix_stack ^
+        "\tpop rbp ; restore the old rbp\n" ^
+        "\tjmp SOB_CLOSURE_CODE(rax)\n"
+    and run params env = function
       | ScmConst' sexpr -> (*DONE : FROM chapter 6 slides: page 76 *)
         let address = search_constant_address sexpr consts in
         Printf.sprintf
@@ -2254,7 +2298,7 @@ module Code_Generation : CODE_GENERATION = struct
               (* [[body]] *)
          ^ (run (List.length params') (env + 1) body)
               (* leave *)
-         ^ "\tleave\n"
+         ^ "\tLEAVE\n"
               (* ret *)
          ^ (Printf.sprintf "\tret 8 * (2 + %d)\n" (List.length params'))
          ^ (Printf.sprintf "%s:\t; lambda simple : new closure is in rax\n" label_end)
@@ -2399,7 +2443,7 @@ module Code_Generation : CODE_GENERATION = struct
           ^ "\tadd rdi, 8*1\n"
           ^ (Printf.sprintf "\tmov qword[rdi], %d\n" count)
           ^ (Printf.sprintf "\tlea r9, [rsp + 8 * (2 + %d)]\n" count)
-          ^ (Printf.sprintf "%s : \n" label_stack_expand_loop)
+          ^ (Printf.sprintf "%s: \n" label_stack_expand_loop)
           ^ "\tcmp rdi, r9\n"
           ^ (Printf.sprintf "\tje %s\n" label_stack_expand_loop_end)
           ^ "\tmov rax, qword [rdi + 8 * 1]\n"
@@ -2416,58 +2460,15 @@ module Code_Generation : CODE_GENERATION = struct
           (* code section*)
           ^ "\tenter 0, 0\n"
           ^ (run count (env + 1) body)
-          ^ "\tleave\n"
+          ^ "\tLEAVE\n"
           (**)
           ^ (Printf.sprintf "\tret AND_KILL_FRAME(%d )\n" count)
           ^ (Printf.sprintf "%s:\t; lambda opt : new closure is in rax\n" label_end)
 
-      | ScmApplic' (proc, args, Tail_Call)
       | ScmApplic' (proc, args, Non_Tail_Call) -> (* DONE *)
-        let _ = print_endline " ScmApplic' NON_TAIL called" in
-        let reversed_args = List.rev args in
-        let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args)
-        in
-        per_arg_exps ^ 
-        Printf.sprintf "\tpush %d\n" (List.length args) ^
-        (run params env proc) ^
-        "\n\tassert_closure(rax)\n" ^
-        "\tpush SOB_CLOSURE_ENV(rax)\n" ^
-        "\tcall SOB_CLOSURE_CODE(rax)\n"
-
+         gen_non_tail_calls params env proc args 
       | ScmApplic' (proc, args, Tail_Call) -> (*TODO Nadav: FROM chapter 6 slides: page 108 *)
-        let _ = print_endline " ScmLambda' TAIL called" in
-        let argc = List.length args in
-        let label_loop = make_tc_applic_recycle_frame_loop() in
-        let label_done = make_tc_applic_recycle_frame_done() in
-        let reversed_args = List.rev args in
-        let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args) in
-        let fix_stack = (Printf.sprintf "\tmov rsi, %d\n" (argc + 4)) ^
-          "\tmov rcx, COUNT\n" ^
-          "\tlea rcx, [rbp + 8*rcx + 8*3]\n" ^
-          "\tlea rdx, [rbp - 8*1]\n" ^
-          (Printf.sprintf "%s:\t; loop in scmapplic\n" label_loop) ^
-          "\tcmp rsi, 0\n" ^
-          (Printf.sprintf "\tje %s\n" label_done) ^
-          "\tmov rdi, qword[rdx]\n" ^
-          "\tmov qword[rcx], rdi\n" ^
-          "\tsub rcx, 8\n" ^
-          "\tsub rdx, 8\n" ^
-          "\tdec rsi\n" ^
-          (Printf.sprintf "\tjmp %s\n" label_loop) ^
-          (Printf.sprintf "%s:\t; loop done in scmapplic\n" label_done) ^
-          "\tadd rcx, 8\n" ^ 
-          "\tmov rsp, rcx\n"
-        in
-        per_arg_exps ^ 
-        (Printf.sprintf "\tpush %d\n" argc )^
-        (run params env proc) ^
-        "\n\tassert_closure(rax)\n" ^ 
-        "\tpush qword [rbp + 8*1]\n" ^
-        "\tpush qword [rbp]\n" ^
-        fix_stack ^
-        "\tpop rbp ; restore the old rbp\n" ^
-        "\tjmp SOB_CLOSURE_CODE(rax)\n"
-        
+        if should_optimize_tail_calls then (gen_tail_calls params env proc args) else (gen_non_tail_calls params env proc args)
     and runs params env exprs' =
       List.map
         (fun expr' ->
@@ -2506,7 +2507,7 @@ module Code_Generation : CODE_GENERATION = struct
   let check_if_parses ocaml_content = 
     let sexprs = (PC.star Reader.nt_sexpr ocaml_content 0).found in
     let exprs = List.map Tag_Parser.tag_parse sexprs in
-    let exprs' = List.map Semantic_Analysis.semantics exprs in
+    let _ = List.map Semantic_Analysis.semantics exprs in
     true;;
   let compile_scheme_file file_in file_out =
     compile_scheme_string file_out (file_to_string file_in);;
