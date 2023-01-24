@@ -2064,7 +2064,7 @@ module Code_Generation : CODE_GENERATION = struct
   (*TODO: IMPLEMENT*)
   let rec code_gen exprs' =
     let consts = make_constants_table exprs' in
-    let _ = debug (Printf.sprintf("Constants table:\n%s") (const_table_to_string consts)) in
+    let _ = debug (Printf.sprintf("Constants table:\n\n%s\n") (const_table_to_string consts)) in
     let free_vars = make_free_vars_table exprs' in
     let rec gen_non_tail_calls = fun params env proc args ->
         let _ = debug "gen_non_tail_calls called" in
