@@ -6,6 +6,8 @@
 
 (* general list-processing procedures *)
 
+let debug_flag = true;;
+let debug str = if debug_flag then print_endline (Printf.sprintf "DEBUG: %s" str) else ();;
 let list_of_string string =
   let rec run i s =
     if i < 0 then s
@@ -2062,10 +2064,10 @@ module Code_Generation : CODE_GENERATION = struct
   (*TODO: IMPLEMENT*)
   let rec code_gen exprs' =
     let consts = make_constants_table exprs' in
-    let _ = print_endline (const_table_to_string consts) in
+    let _ = debug (const_table_to_string consts) in
     let free_vars = make_free_vars_table exprs' in
     let rec gen_non_tail_calls = fun params env proc args ->
-        let _ = print_endline " ScmApplic' NON_TAIL called" in
+        let _ = debug "gen_non_tail_calls called" in
         let reversed_args = List.rev args in
         let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args)
         in
@@ -2076,28 +2078,12 @@ module Code_Generation : CODE_GENERATION = struct
         "\tpush SOB_CLOSURE_ENV(rax)\n" ^
         "\tcall SOB_CLOSURE_CODE(rax)\n"
       and gen_tail_calls =  fun params env proc args -> (*TODO Nadav: FROM chapter 6 slides: page 108 *)
-        let _ = print_endline " ScmLambda' TAIL called" in
+        let _ = debug " gen_tail_calls called" in
         let argc = List.length args in
         let label_loop = make_tc_applic_recycle_frame_loop() in
         let label_done = make_tc_applic_recycle_frame_done() in
         let reversed_args = List.rev args in
-        let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args) in
-        let fix_stack = (Printf.sprintf "\tmov rsi, %d\n" (argc + 4)) ^
-          "\tmov rcx, COUNT\n" ^
-          "\tlea rcx, [rbp + 8*rcx + 8*3]\n" ^
-          "\tlea rdx, [rbp - 8*1]\n" ^
-          (Printf.sprintf "%s:\t; loop in scmapplic\n" label_loop) ^
-          "\tcmp rsi, 0\n" ^
-          (Printf.sprintf "\tje %s\n" label_done) ^
-          "\tmov rdi, qword[rdx]\n" ^
-          "\tmov qword[rcx], rdi\n" ^
-          "\tsub rcx, 8\n" ^
-          "\tsub rdx, 8\n" ^
-          "\tdec rsi\n" ^
-          (Printf.sprintf "\tjmp %s\n" label_loop) ^
-          (Printf.sprintf "%s:\t; loop done in scmapplic\n" label_done) ^
-          "\tadd rcx, 8\n" ^ 
-          "\tmov rsp, rcx\n"
+        let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args)
         in
         per_arg_exps ^ 
         (Printf.sprintf "\tpush %d\n" argc )^
@@ -2105,7 +2091,23 @@ module Code_Generation : CODE_GENERATION = struct
         "\n\tassert_closure(rax)\n" ^ 
         "\tpush qword [rbp + 8*1]\n" ^
         "\tpush qword [rbp]\n" ^
-        fix_stack ^
+        (* fixing the stack: *)
+        (Printf.sprintf "\tmov rsi, %d\n" (argc + 4)) ^
+        "\tmov rcx, COUNT\n" ^
+        "\tlea rcx, [rbp + 8*rcx + 8*3]\n" ^
+        "\tlea rdx, [rbp - 8*1]\n" ^
+        (Printf.sprintf "%s:\t; loop in scmapplic\n" label_loop) ^
+        "\tcmp rsi, 0\n" ^
+        (Printf.sprintf "\tje %s\n" label_done) ^
+        "\tmov rdi, qword[rdx]\n" ^
+        "\tmov qword[rcx], rdi\n" ^
+        "\tsub rcx, 8\n" ^
+        "\tsub rdx, 8\n" ^
+        "\tdec rsi\n" ^
+        (Printf.sprintf "\tjmp %s\n" label_loop) ^
+        (Printf.sprintf "%s:\t; loop done in scmapplic\n" label_done) ^
+        "\tadd rcx, 8\n" ^ 
+        "\tmov rsp, rcx\n" ^
         "\tpop rbp ; restore the old rbp\n" ^
         "\tjmp SOB_CLOSURE_CODE(rax)\n"
     and run params env = function
@@ -2221,7 +2223,7 @@ module Code_Generation : CODE_GENERATION = struct
         ^ "\tpop qword[rax]\n"
         ^ "\tmov rax, sob_void\n"
       | ScmLambda' (params', Simple, body) -> (* WRITTEN BY MAIER! -TODO : FROM chapter 6 slides: page 91 *)
-        let _ = print_endline " ScmLambda' Simple called"
+        let _ = debug "ScmLambda' Simple called"
          and label_loop_env = make_lambda_simple_loop_env ()
          and label_loop_env_end = make_lambda_simple_loop_env_end ()
          and label_loop_params = make_lambda_simple_loop_params ()
@@ -2303,7 +2305,7 @@ module Code_Generation : CODE_GENERATION = struct
          ^ (Printf.sprintf "\tret 8 * (2 + %d)\n" (List.length params'))
          ^ (Printf.sprintf "%s:\t; lambda simple : new closure is in rax\n" label_end)
       | ScmLambda' (params', Opt opt, body) ->  (*TODO Mattan: FROM chapter 6 slides: page 100 *)
-          let _ = print_endline " ScmLambda' OPT called"
+          let _ = debug "ScmLambda' OPT called"
           and label_loop_env = make_lambda_opt_loop_env ()
           and label_loop_env_end = make_lambda_opt_loop_env_end ()
           and label_copy_params_loop = make_lambda_opt_loop_params ()
@@ -2462,7 +2464,7 @@ module Code_Generation : CODE_GENERATION = struct
           ^ (run count (env + 1) body)
           ^ "\tLEAVE\n"
           (**)
-          ^ (Printf.sprintf "\tret AND_KILL_FRAME(%d )\n" count)
+          ^ (Printf.sprintf "\tret AND_KILL_FRAME(%d)\n" count)
           ^ (Printf.sprintf "%s:\t; lambda opt : new closure is in rax\n" label_end)
 
       | ScmApplic' (proc, args, Non_Tail_Call) -> (* DONE *)
