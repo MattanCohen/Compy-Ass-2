@@ -2141,38 +2141,7 @@ module Code_Generation : CODE_GENERATION = struct
         "\tpush SOB_CLOSURE_ENV(rax)\n" ^
         "\tcall SOB_CLOSURE_CODE(rax)\n"
       and gen_tail_calls =  fun params env proc args -> (*TODO Nadav: FROM chapter 6 slides: page 108 *)
-        let _ = debug " gen_tail_calls called" in
-        let argc = List.length args in
-        let label_loop = make_tc_applic_recycle_frame_loop() in
-        let label_done = make_tc_applic_recycle_frame_done() in
-        let reversed_args = List.rev args in
-        let per_arg_exps = String.concat "" (List.map (fun arg -> (run params env arg) ^ "\tpush rax\n") reversed_args)
-        in
-        per_arg_exps ^ 
-        (Printf.sprintf "\tpush %d\n" argc )^
-        (run params env proc) ^
-        "\n\tassert_closure(rax)\n" ^ 
-        "\tpush qword [rbp + 8*1]\n" ^
-        "\tpush qword [rbp]\n" ^
-        (* fixing the stack: *)
-        (Printf.sprintf "\tmov rsi, %d\n" (argc + 4)) ^
-        "\tmov rcx, COUNT\n" ^
-        "\tlea rcx, [rbp + 8*rcx + 8*3]\n" ^
-        "\tlea rdx, [rbp - 8*1]\n" ^
-        (Printf.sprintf "%s:\t; loop in scmapplic\n" label_loop) ^
-        "\tcmp rsi, 0\n" ^
-        (Printf.sprintf "\tje %s\n" label_done) ^
-        "\tmov rdi, qword[rdx]\n" ^
-        "\tmov qword[rcx], rdi\n" ^
-        "\tsub rcx, 8\n" ^
-        "\tsub rdx, 8\n" ^
-        "\tdec rsi\n" ^
-        (Printf.sprintf "\tjmp %s\n" label_loop) ^
-        (Printf.sprintf "%s:\t; loop done in scmapplic\n" label_done) ^
-        "\tadd rcx, 8\n" ^ 
-        "\tmov rsp, rcx\n" ^
-        "\tpop rbp ; restore the old rbp\n" ^
-        "\tjmp SOB_CLOSURE_CODE(rax)\n"
+        raise X_not_yet_supported
     and run params env = fun exp' ->
        let _ = debug (Printf.sprintf "Called run with params %d, env %d, expr: %s\n" params env (detailed_string_of_expr' exp')) in
        match exp' with
