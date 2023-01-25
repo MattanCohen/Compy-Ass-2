@@ -278,3 +278,77 @@
 (define > #void)
 (define >= #void)
 (define = #void)
+
+
+(let ((make-char-comparator
+        (lambda (comparator)
+          (lambda s
+            (apply comparator
+              (map char->integer s))))))
+  (set! char<? (make-char-comparator <))
+  (set! char<=? (make-char-comparator <=))
+  (set! char=? (make-char-comparator =))
+  (set! char>? (make-char-comparator >))
+  (set! char>=? (make-char-comparator >=)))
+
+(define char-downcase #void)
+(define char-upcase #void)
+
+(let ((delta
+        (- (char->integer #\a)
+          (char->integer #\A))))
+  (set! char-downcase
+    (lambda (ch)
+      (if (char<=? #\A ch #\Z)
+          (integer->char
+            (+ (char->integer ch) delta))
+          ch)))
+  (set! char-upcase
+    (lambda (ch)
+      (if (char<=? #\a ch #\z)
+          (integer->char
+            (- (char->integer ch) delta))
+          ch))))
+
+(define char-ci<? #void)
+(define char-ci<=? #void)
+(define char-ci=? #void)
+(define char-ci>? #void)
+(define char-ci>=? #void)
+
+(let ((make-char-ci-comparator
+        (lambda (comparator)
+          (lambda s
+            (apply comparator
+              (map (lambda (ch)
+                     (char->integer
+                       (char-downcase ch)))
+                s))))))
+  (set! char-ci<? (make-char-ci-comparator <))
+  (set! char-ci<=? (make-char-ci-comparator <=))
+  (set! char-ci=? (make-char-ci-comparator =))
+  (set! char-ci>? (make-char-ci-comparator >))
+  (set! char-ci>=? (make-char-ci-comparator >=)))
+
+(define string-downcase #void)
+(define string-upcase #void)
+
+(let ((make-string-case-converter
+        (lambda (char-case-converter)
+          (lambda (str)
+            (list->string
+              (map char-case-converter
+                (string->list str)))))))
+  (set! string-downcase (make-string-case-converter char-downcase))
+  (set! string-upcase (make-string-case-converter char-upcase)))
+
+(define string<? #void)
+(define string<=? #void)
+(define string=? #void)
+(define string>=? #void)
+(define string>? #void)
+(define string-ci<? #void)
+(define string-ci<=? #void)
+(define string-ci=? #void)
+(define string-ci>=? #void)
+(define string-ci>? #void)
