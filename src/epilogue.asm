@@ -584,7 +584,7 @@ L_code_ptr_bin_apply:   ; (apply proc list-s) -: recieves 2 arguments
         mov rcx, 0              ; length(list-s)
         mov r9, rbx
 .Num_params:
-        cmp r9, T_nil
+        cmp byte[r9], T_nil
         je .End_num_params       
         inc rcx
         mov r9, SOB_PAIR_CDR(r9)
@@ -604,13 +604,16 @@ L_code_ptr_bin_apply:   ; (apply proc list-s) -: recieves 2 arguments
         mov qword[rdi], rcx
         add rdi, 8 * 1
 ; push list (backwards)
+        mov r9, PARAM(1)
+        cmp byte[r9], T_pair 
+        jne .End
 .Loop:
-        mov rax, SOB_PAIR_CAR(rbx)
+        mov rax, SOB_PAIR_CAR(r9)
         mov qword[rdi], rax
         add rdi, 8 * 1
-        cmp rbx, T_nil
-        je .End
-        mov rbx, SOB_PAIR_CDR(rbx)
+        cmp byte[r9], T_pair 
+        jne .End
+        mov r9, SOB_PAIR_CDR(r9)
         jmp .Loop
 .End:
         call SOB_CLOSURE_CODE(r8)
