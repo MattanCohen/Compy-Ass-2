@@ -189,3 +189,92 @@
     (andmap-list f s) 
   )
 )
+
+(define map-list
+  (lambda (f s)
+    (if (null? s) s
+      (cons (f (car s)) (map-list f (cdr s)))
+    )
+  )
+)
+
+(define map
+  (lambda (f . s)
+    (map-list f s) 
+  )
+)
+
+
+(define append-one 
+  (lambda (l x)
+    (if (null? l) (cons x l)
+        (cons (car l) (append-one (cdr l) x))
+    )
+  )
+)
+
+(define append-list
+  (lambda (l1 l2)
+    (if (null? l2) l1
+      (append-list (append-one l1 (car l2)) (cdr l2))
+    )
+  )
+)
+
+(define append
+  (lambda (l . s)
+    (append-list l s)
+  )
+)
+
+(define prepand
+  (lambda (l x)
+    (cons x l)
+  )
+)
+
+(define reverse-internal
+  (lambda (new-l l)
+    (if (null? l) new-l
+      (reverse-internal (prepand new-l (car l)) (cdr l))
+    )
+  )
+)
+
+(define reverse
+  (lambda (l)
+    (reverse-internal '() l)
+  )
+)
+
+(define fold-left-list
+  (lambda (f unit ss)
+    (if (null? ss) unit
+      (fold-left-list f (f unit (car ss)) (cdr ss))
+    )
+  )
+)
+
+(define fold-left
+  (lambda (f unit . ss)
+    (fold-left-list f unit ss)
+  )
+)
+
+(define fold-right-list
+  (lambda (f unit ss)
+    (fold-left-list f unit (reverse ss))
+  )
+)
+
+(define fold-right
+  (lambda (f unit . ss)
+    (fold-left-list f unit ss)
+  )
+)
+
+(define < #void)
+(define <= #void)
+(define > #void)
+(define >= #void)
+(define = #void)
