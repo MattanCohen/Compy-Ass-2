@@ -577,40 +577,45 @@ L_code_ptr_bin_apply:   ; (apply proc list-s) -: recieves 2 arguments
         enter 0, 0
         cmp COUNT, 2
         jne L_error_arg_count_2
-        mov rax, PARAM(0)       ; rax = proc
-        assert_closure(rax)     
+        mov r8, PARAM(0)       ; rax = proc
+        assert_closure(r8)     
         mov rbx, PARAM(1)       ; rbx = list-s
         assert_pair(rbx)        
         mov rcx, 0              ; length(list-s)
-        mov rdx, 0
-
-.Loop1:
-        cmp rbx, T_nil          ; if (rbx == nill)
-        je .Loop2                 ;       go to Loop2
-                                ; else
-        assert_pair(rbx)                ; if (rbx is pair)
-        ; push SOB_PAIR_CAR(rbx)                  ; push car(rbx) 
-        mov rdx, SOB_PAIR_CAR(rbx)                  ; car(rbx) -> rdx 
-        mov rbx, SOB_PAIR_CDR(rbx)              ; rbx = cdr(rbx)
-        inc rcx                                 ; length(list-s)++
-        add rdx, 8
-        jmp .Loop1                               ; go to Loop1
-        
-.Loop2: 
-        cmp rdx, 0
+        mov r9, rbx
+.Num_params:
+        cmp r9, T_nil
+        je .End_num_params       
+        inc rcx
+        mov r9, SOB_PAIR_CDR(r9)
+        jmp .Num_params
+.End_num_params:
+        sub rsp, 8 * 1
+        mov rdi, rsp
+; copy ret addr
+        mov rax, qword[rdi + 8 * 1]
+        mov qword[rdi], rax
+        add rdi, 8 * 1
+; copy proc env
+        mov rax, SOB_CLOSURE_ENV(r8)
+        mov qword[rdi], rax
+        add rdi, 8 * 1
+; push list num
+        mov qword[rdi], rcx
+        add rdi, 8 * 1
+; push list (backwards)
+.Loop:
+        mov rax, SOB_PAIR_CAR(rbx)
+        mov qword[rdi], rax
+        add rdi, 8 * 1
+        cmp rbx, T_nil
         je .End
-
-        push rdx
-        add rdx, -8
-        jmp .Loop2
-
+        mov rbx, SOB_PAIR_CDR(rbx)
+        jmp .Loop
 .End:
-        push rcx                        ; push list length
-        push SOB_CLOSURE_ENV(rax)       ; push proc env
-        push RET_ADDR                   ; push return address
-        call SOB_CLOSURE_CODE(rax)      ; call proc
+        call SOB_CLOSURE_CODE(r8)
 
-	
+
 L_code_ptr_is_null:
         ENTER
         cmp COUNT, 1
