@@ -3,6 +3,8 @@
 (define lambda-opt ((lambda (a . b) (quasiquote (lambda opt arg ,a rest ,@b))) 6 9))
 (define plus ((lambda (a b) (quasiquote (performing ,a + ,b result is ,(bin+ a b)))) 5 4))
 
+; an example of the most simplest recursion function ever that doesnt work
+; (define fact-example ((lambda (n) (if (zero? n) 1 (bin* n (fact-example (bin- n 1))))) 3))
 
 (let ((space '___space___))
 (quasiquote (
