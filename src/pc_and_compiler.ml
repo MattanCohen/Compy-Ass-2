@@ -2204,18 +2204,14 @@ module Code_Generation : CODE_GENERATION = struct
         let genedDif = (run params env dif) in 
         let elseLabel = make_if_else() in
         let exitLabel = make_if_end() in
-        let testP = string_of_expr' test in
-        let ditP = string_of_expr' dit in
-        let difP = string_of_expr' dif in
-        Printf.sprintf "; performing scm if expr, test: %s dit: %s dif: %s \n" testP ditP difP ^
         genedTest ^
-        "\tcmp rax, sob_false\n" ^
-        Printf.sprintf "\tje %s" elseLabel ^
+        "\tcmp rax, sob_boolean_false\n" ^
+        Printf.sprintf "\tje %s\n" elseLabel ^
         genedDit ^
-        Printf.sprintf "\tjmp %s" exitLabel ^
-        Printf.sprintf "%s:" elseLabel ^
+        Printf.sprintf "\tjmp %s\n" exitLabel ^
+        Printf.sprintf "%s:\n" elseLabel ^
         genedDif ^
-        Printf.sprintf "%s:" exitLabel
+        Printf.sprintf "%s:\n" exitLabel
       | ScmSeq' exprs' -> 
          String.concat "\n"
            (List.map (run params env) exprs')
