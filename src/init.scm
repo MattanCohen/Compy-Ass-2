@@ -108,17 +108,17 @@
                           ((real? b) (__bin-mul-rr a b))
                           (else (throw-error))))
                    (else (throw-error)))))
-(define list*
+(define list-mul
   (lambda (s)
     (if (null? s) 1
-        (bin* (car s) (list* (cdr s)))
+        (bin* (car s) (list-mul (cdr s)))
     )
   )
 )
 
 (define * 
   (lambda s
-    (list* s)
+    (list-mul s)
   )
 )
 
@@ -137,7 +137,7 @@
 (define list/
   (lambda (s)
     (if (null? s) 1
-        (bin/ (car s) (list* (cdr s)))
+        (bin/ (car s) (list-mul (cdr s)))
     )
   )
 )
