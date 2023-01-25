@@ -574,49 +574,62 @@ L_code_ptr_bin_apply:   ; (apply proc list-s) -: recieves 2 arguments
                         ;                        argument %1 is procedure
                         ;                        argument %2 is proper list.
                         ;                        creates w = '(,@s) and applies proc on w
-        enter 0, 0
-        cmp COUNT, 2
-        jne L_error_arg_count_2
-        mov r8, PARAM(0)       ; rax = proc
-        assert_closure(r8)     
-        mov rbx, PARAM(1)       ; rbx = list-s
-        assert_pair(rbx)        
-        mov rcx, 0              ; length(list-s)
-        mov r9, rbx
-.Num_params:
-        cmp byte[r9], T_nil
-        je .End_num_params       
-        inc rcx
-        mov r9, SOB_PAIR_CDR(r9)
-        jmp .Num_params
-.End_num_params:
-        sub rsp, 8 * 1
-        mov rdi, rsp
-; copy ret addr
-        mov rax, qword[rdi + 8 * 1]
-        mov qword[rdi], rax
-        add rdi, 8 * 1
-; copy proc env
-        mov rax, SOB_CLOSURE_ENV(r8)
-        mov qword[rdi], rax
-        add rdi, 8 * 1
-; push list num
-        mov qword[rdi], rcx
-        add rdi, 8 * 1
-; push list (backwards)
-        mov r9, PARAM(1)
-        cmp byte[r9], T_pair 
-        jne .End
-.Loop:
-        mov rax, SOB_PAIR_CAR(r9)
-        mov qword[rdi], rax
-        add rdi, 8 * 1
-        cmp byte[r9], T_pair 
-        jne .End
-        mov r9, SOB_PAIR_CDR(r9)
-        jmp .Loop
-.End:
-        call SOB_CLOSURE_CODE(r8)
+      ENTER
+      cmp COUNT, 2
+      jne L_error_arg_count_2
+      mov rdi, PARAM(0)
+      assert_closure(rdi)
+      mov rsi, 0
+      mov rax, PARAM(1)
+      cmp byte[rax], T_nil
+      je .Loop_args_exit
+      assert_pair(rax)
+
+.Loop_args:
+        push SOB_PAIR_CAR(rax)
+        mov rax, SOB_PAIR_CDR(rax)
+        inc rsi
+        cmp byte[rax], T_pair
+        je .Loop_args
+
+.Loop_args_exit:
+        mov r9, rsi
+        mov rdx, rsp
+
+.Loop_reverse_args:
+        cmp rsi, 0
+        je .Loop_reverse_args_exit
+        push qword[rdx]
+        add rdx, 8
+        dec rsi
+        jmp .Loop_reverse_args
+
+.Loop_reverse_args_exit:
+        mov rsi, r9
+
+        push rsi                        ; push size of list
+        push SOB_CLOSURE_ENV(rdi)       ; push proc's env
+        push RET_ADDR                   ; push old ret addr
+        push OLD_RDP                    ; push old rdp 
+
+.Fix_frame:
+        add rsi, 4
+        lea rcx, [rbp + 8*5]
+        lea rdx, [rsp + 8*r9 + 8*3]
+.Fix_frame_loop:
+        cmp rsi, 0
+        je .Fix_frame_loop_exit
+        mov rbx, qword[rdx]
+        mov qword[rcx], rbx
+        sub rcx, 8
+        sub rdx, 8
+        dec rsi
+        jmp .Fix_frame_loop
+.Fix_frame_loop_exit:
+        add rcx, 8
+        mov rsp, rcx
+        pop rbp
+        jmp SOB_CLOSURE_CODE(rdi)
 
 
 L_code_ptr_is_null:

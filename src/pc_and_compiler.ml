@@ -2225,8 +2225,8 @@ module Code_Generation : CODE_GENERATION = struct
           "\t;performing var set statement bound\n"
           ^ Printf.sprintf "%s\n" genedExpr
           ^ "\tmov rbx, qword [rbp + 8 * 2]\n"
-          ^ (Printf.sprintf "\tmov rbx, qword [rbp + 8 * %d]\n" major)
-          ^ (Printf.sprintf "\tmov qword [rbp + 8 * %d], rax \n" minor)
+          ^ (Printf.sprintf "\tmov rbx, qword [rbx + 8 * %d]\n" major)
+          ^ (Printf.sprintf "\tmov qword [rbx + 8 * %d], rax \n" minor)
           ^ "\tmov rax, sob_void\n"
       | ScmVarDef' (Var' (v, Free), expr') -> 
          let label = search_free_var_table v free_vars in
