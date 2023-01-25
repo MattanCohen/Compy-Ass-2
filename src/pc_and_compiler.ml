@@ -776,6 +776,10 @@ type lambda_kind =
   | Simple
   | Opt of string;;
 
+let string_of_lambda_kind: lambda_kind -> string = function
+  | Simple -> "Simple"
+  | Opt(str) -> Printf.sprintf "Opt(%s)" str;;
+
 type expr =
   | ScmConst of sexpr
   | ScmVarGet of var
@@ -1221,11 +1225,19 @@ module Tag_Parser : TAG_PARSER = struct
 end;; (* end of struct Tag_Parser *)
 
 type app_kind = Tail_Call | Non_Tail_Call;;
+let string_of_app_kind: app_kind -> string = function
+  | Tail_Call -> "Tail_Call"
+  | Non_Tail_Call -> "Non_Tail_Call";;
 
 type lexical_address =
   | Free
   | Param of int
   | Bound of int * int;;
+
+let string_of_lexical_address: lexical_address -> string = function
+  | Free -> "Free"
+  | Param(x) -> Printf.sprintf "Param(%d)" x
+  | Bound(x, y) -> Printf.sprintf "Bound(%d,%d)" x y;;
 
 type var' = Var' of string * lexical_address;;
 
@@ -1242,6 +1254,35 @@ type expr' =
   | ScmBoxSet' of var' * expr'
   | ScmLambda' of string list * lambda_kind * expr'
   | ScmApplic' of expr' * expr' list * app_kind;;
+
+
+let string_of_var': var' -> string = function
+  Var' (string, lexical_address) -> Printf.sprintf "Var' %s at address %s" string (string_of_lexical_address lexical_address);;
+
+let string_of_expr' expr' =
+  let rec runs exprs' = String.concat ", " (List.map run exprs')
+
+  and run: expr' -> string = function
+  | ScmConst' (sexpr) -> "ScmConst'(" ^ (string_of_sexpr sexpr) ^ ")"
+  | ScmVarGet' (var') -> "ScmVarGet'(" ^ (string_of_var'  var') ^ ")"
+  | ScmIf' (e1, e2, e3) -> Printf.sprintf "ScmIf'(%s, %s, %s)" (run e1) (run e2) (run e3)
+  | ScmSeq' (exprs') -> Printf.sprintf "ScmSeq'(%s)" (runs exprs')
+  | ScmOr' (exprs') -> Printf.sprintf "ScmOr'(%s)" (runs exprs')
+  | ScmVarSet'(var', expr') -> Printf.sprintf "ScmVarSet'(%s, %s)" (string_of_var' var') (run expr')
+  | ScmVarDef'(var', expr') -> Printf.sprintf "ScmVarDef'(%s, %s)" (string_of_var' var') (run expr')
+  | ScmBox'(var') -> Printf.sprintf "ScmBox'(%s)" (string_of_var' var')
+  | ScmBoxGet'(var') -> Printf.sprintf "ScmScmBoxGetBox'(%s)" (string_of_var' var')
+  | ScmBoxSet'(var', expr') -> Printf.sprintf "ScmBoxSet'(%s, %s)" (string_of_var' var') (run expr')
+  | ScmLambda'(strings, kind, expr') -> 
+    Printf.sprintf " ScmLambda'((%s), %s, %s)" (String.concat " " strings) (string_of_lambda_kind kind) (run expr')
+  | ScmApplic'(expr', exprs', kind) -> 
+    Printf.sprintf "ScmApplic'(%s, [%s], %s)" (run expr') (runs exprs') (string_of_app_kind kind)
+
+  in run expr';;
+
+  
+
+    (*Printf.sprintf ("ScmSeq'(%s)" (String.concat "," (List.map string_of_expr' exprs')))*)
 
 module type SEMANTIC_ANALYSIS = sig
   val annotate_lexical_address : expr -> expr'
@@ -1521,6 +1562,26 @@ end;; (* end of module Semantic_Analysis *)
 
 let sexpr_of_var' (Var' (name, _)) = ScmSymbol name;;
 
+let detailed_string_of_expr' expr' =
+  let rec runs exprs' = String.concat ", " (List.map run exprs')
+
+  and run: expr' -> string = function
+  | ScmConst' (sexpr) -> "ScmConst'(" ^ (string_of_sexpr sexpr) ^ ")"
+  | ScmVarGet' (var') -> "ScmVarGet'(" ^ (string_of_var'  var') ^ ")"
+  | ScmIf' (e1, e2, e3) -> Printf.sprintf "ScmIf'(%s, %s, %s)" (run e1) (run e2) (run e3)
+  | ScmSeq' (exprs') -> Printf.sprintf "ScmSeq'([%s])" (runs exprs')
+  | ScmOr' (exprs') -> Printf.sprintf "ScmOr'([%s])" (runs exprs')
+  | ScmVarSet'(var', expr') -> Printf.sprintf "ScmVarSet'(%s, %s)" (string_of_var' var') (run expr')
+  | ScmVarDef'(var', expr') -> Printf.sprintf "ScmVarDef'(%s, %s)" (string_of_var' var') (run expr')
+  | ScmBox'(var') -> Printf.sprintf "ScmBox'(%s)" (string_of_var' var')
+  | ScmBoxGet'(var') -> Printf.sprintf "ScmScmBoxGetBox'(%s)" (string_of_var' var')
+  | ScmBoxSet'(var', expr') -> Printf.sprintf "ScmBoxSet'(%s, %s)" (string_of_var' var') (run expr')
+  | ScmLambda'(strings, kind, expr') -> 
+    Printf.sprintf " ScmLambda'((%s), %s, %s)" (String.concat " " strings) (string_of_lambda_kind kind) (run expr')
+  | ScmApplic'(expr', exprs', kind) -> 
+    Printf.sprintf "ScmApplic'(%s, [%s], %s)" (run expr') (runs exprs') (string_of_app_kind kind)
+
+  in run expr';;
 
 let rec sexpr_of_expr' = function
   | ScmConst' (ScmVoid) -> ScmVoid
@@ -1605,10 +1666,12 @@ let rec sexpr_of_expr' = function
        Reader.scheme_sexpr_list_of_sexpr_list
          (List.map sexpr_of_expr' args) in
      ScmPair (proc, args)
-  | _ -> raise (X_this_should_not_happen "not expr'");;
+  | expr' -> raise (X_this_should_not_happen (Printf.sprintf "not expr' %s" (detailed_string_of_expr' expr')));;
 
 let string_of_expr' expr =
   Printf.sprintf "%a" Reader.sprint_sexpr (sexpr_of_expr' expr);;
+
+
 
 let print_expr' chan expr =
   output_string chan
@@ -1702,9 +1765,9 @@ module Code_Generation : CODE_GENERATION = struct
       and run: expr' -> sexpr list = function
           | ScmConst' sexpr -> [sexpr]
           | ScmVarGet' _ 
-          | ScmVarSet' _ 
           | ScmBox' _ 
           | ScmBoxGet' _ -> []
+          | ScmVarSet' (_, expr') -> run expr'
           | ScmIf' (test, dit, dif) ->  runs [test; dit; dif]
           | ScmSeq' exprs'
           | ScmOr' exprs' -> runs exprs'
@@ -2110,13 +2173,16 @@ module Code_Generation : CODE_GENERATION = struct
         "\tmov rsp, rcx\n" ^
         "\tpop rbp ; restore the old rbp\n" ^
         "\tjmp SOB_CLOSURE_CODE(rax)\n"
-    and run params env = function
+    and run params env = fun exp' ->
+       let _ = debug (Printf.sprintf "Called run with params %d, env %d, expr: %s\n" params env (detailed_string_of_expr' exp')) in
+       match exp' with
       | ScmConst' sexpr -> (*DONE : FROM chapter 6 slides: page 76 *)
         let address = search_constant_address sexpr consts in
-        Printf.sprintf
+        let res = Printf.sprintf
           "\tmov rax, %s + %d\n"
           label_start_of_constants_table
-          address
+          address in
+        res
       | ScmVarGet' (Var' (v, Free)) -> (* WRITTEN BY MAIER! -TODO : FROM chapter 6 slides: page 81 *)
          let label = search_free_var_table v free_vars in
          Printf.sprintf
@@ -2179,11 +2245,13 @@ module Code_Generation : CODE_GENERATION = struct
           ^ (Printf.sprintf "\tmov qword [%s], rax \n" labelInFVarTableV)
           ^ "\tmov rax, sob_void\n"
       | ScmVarSet' (Var' (v, Param minor), expr') -> (*DONE Mattan : FROM chapter 6 slides: page 78 *)
-          let genedExpr = (run params env expr') in 
+          let genedExpr = (run params env expr') in
+          let res = 
           "\t;performing var set statement param\n"
           ^ Printf.sprintf "%s\n" genedExpr
           ^ (Printf.sprintf "\tmov qword [rbp + 8 * (4 + %d)], rax \n" minor)
           ^ "\tmov rax, sob_void\n"
+          in res
       | ScmVarSet' (Var' (v, Bound (major, minor)), expr') -> (*DONE Mattan : FROM chapter 6 slides: page 80 *)
           let genedExpr = (run params env expr') in 
           "\t;performing var set statement bound\n"
