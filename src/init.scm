@@ -282,7 +282,79 @@
 (define = #void)
 
 
-; exit
+; (let* ((exit
+;          (lambda ()
+;            (error 'generic-comparator
+;              "all the arguments must be numbers")))
+;        (make-bin-comparator
+;          (lambda (comparator-qq comparator-rr)
+;            (lambda (a b)
+;              (cond ((rational? a)
+;                     (cond ((rational? b) (comparator-qq a b))
+;                           ((real? b)
+;                            (comparator-rr (rational->real a) b))
+;                           (else (exit))))
+;                    ((real? a)
+;                     (cond ((rational? b)
+;                            (comparator-rr a (rational->real b)))
+;                           ((real? b) (comparator-rr a b))
+;                           (else (exit))))))))
+;        (bin<? (make-bin-comparator __bin-less-than-qq __bin-less-than-rr))
+;        (bin=? (make-bin-comparator __bin-equal-qq __bin-equal-rr))
+;        (bin>=? (lambda (a b) (not (bin<? a b))))
+;        (bin>? (lambda (a b) (bin<? b a)))
+;        (bin<=? (lambda (a b) (not (bin>? a b)))))
+;   (let ((make-run
+;           (lambda (bin-ordering)
+;             (letrec ((run
+;                        (lambda (a s)
+;                          (or (null? s)
+;                              (and (bin-ordering a (car s))
+;                                   (run (car s) (cdr s)))))))
+;               (lambda (a . s) (run a s))))))
+;     (set! < (make-run bin<?))
+;     (set! <= (make-run bin<=?))
+;     (set! > (make-run bin>?))
+;     (set! >= (make-run bin>=?))
+    ;;(set! = (make-run bin=?))))
+
+
+(define list->size
+  (lambda (l) 
+    (if (null? l) 0
+      (+ 1 (list-size (cdr l)))
+    )
+  )
+)
+
+
+(define make-list-internal
+  (lambda (n init-char) 
+    (if (zero? n) '()
+      (cons init-char (make-list-internal (- n 1) init-char))
+    )
+  )
+)
+
+
+(define make-list
+  (lambda (n . chs)
+    (if (null? chs) (make-list-internal n 0)
+        (make-list-internal n (car chs))
+    )
+  )
+)
+
+; (define make-list
+;   (lambda (n . chs)
+;     (cond ((null? chs) (make-list-internal n #\nul))
+;             ((and (pair? chs)
+;                   (null? (cdr chs))
+;                   (char? (car chs)))
+;              (make-list-internal n (car chs)))
+;             (else (error 'make-list
+;                     "Usage: (make-list length ?optional-init-char)"))))
+;)
 
 ; make-list
 
