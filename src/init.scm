@@ -1,5 +1,3 @@
-;;; init.scm
-;;; Initial definitions that should be available for the compiler
 
 (define (caar x) (car (car x)))
 (define (cadr x) (car (cdr x)))
@@ -44,132 +42,58 @@
        (not (integer? q))))
 
 
-(define list*
-  (letrec ((run
-             (lambda (a s)
-               (if (null? s)
-                   a
-                   (cons a
-                     (run (car s) (cdr s)))))))
-    (lambda (a . s)
-      (run a s))))
+(define throw-error (lambda () (error 'some-bin-func "bad numbers bro come'on")))
 
-(define apply
-  (letrec ((run
-             (lambda (a s)
-               (if (pair? s)
-                   (cons a
-                     (run (car s)
-                       (cdr s)))
-                   a))))
-    (lambda (f . s)
-      (__bin-apply f
-        (run (car s)
-          (cdr s))))))
+(define bin+
+           (lambda (a b)
+             (cond ((rational? a)
+                    (cond ((rational? b) (__bin-add-qq a b))
+                          ((real? b) (__bin-add-rr (rational->real a) b))
+                          (else (throw-error))))
+                   ((real? a)
+                    (cond ((rational? b) (__bin-add-rr a (rational->real b)))
+                          ((real? b) (__bin-add-rr a b))
+                          (else (throw-error))))
+                   (else (throw-error)))))
 
+(define bin-
+           (lambda (a b)
+             (cond ((rational? a)
+                    (cond ((rational? b) (__bin-sub-qq a b))
+                          ((real? b) (__bin-sub-rr (rational->real a) b))
+                          (else (throw-error))))
+                   ((real? a)
+                    (cond ((rational? b) (__bin-sub-rr a (rational->real b)))
+                          ((real? b) (__bin-sub-rr a b))
+                          (else (throw-error))))
+                   (else (throw-error)))))
 
-(define ormap
-  (lambda (f . s)
-    (letrec ((loop
-               (lambda (s)
-                 (and (pair? (car s))
-                      (or (apply f (map car s))
-                          (loop (map cdr s)))))))
-      (loop s))))
+(define bin*
+           (lambda (a b)
+             (cond ((rational? a)
+                    (cond ((rational? b) (__bin-mul-qq a b))
+                          ((real? b) (__bin-mul-rr (rational->real a) b))
+                          (else (throw-error))))
+                   ((real? a)
+                    (cond ((rational? b) (__bin-mul-rr a (rational->real b)))
+                          ((real? b) (__bin-mul-rr a b))
+                          (else (throw-error))))
+                   (else (throw-error)))))
 
-(define andmap
-  (lambda (f . s)
-    (letrec ((loop
-               (lambda (s)
-                 (or (null? (car s))
-                     (and (apply f (map car s))
-                          (loop (map cdr s)))))))
-      (loop s))))  
+(define bin/
+           (lambda (a b)
+             (cond ((rational? a)
+                    (cond ((rational? b) (__bin-div-qq a b))
+                          ((real? b) (__bin-div-rr (rational->real a) b))
+                          (else (throw-error))))
+                   ((real? a)
+                    (cond ((rational? b) (__bin-div-rr a (rational->real b)))
+                          ((real? b) (__bin-div-rr a b))
+                          (else (throw-error))))
+                   (else (throw-error)))))
 
-(define map
-  (letrec ((map1
-             (lambda (f s)
-               (if (null? s)
-                   '()
-                   (cons (f (car s))
-                     (map1 f (cdr s))))))
-           (map-list
-             (lambda (f s)
-               (if (null? (car s))
-                   '()
-                   (cons (apply f (map1 car s))
-                     (map-list f
-                       (map1 cdr s)))))))
-    (lambda (f . s)
-      (if (null? s)
-          '()
-          (map-list f s)))))
-
-
-(define reverse
-  (letrec ((run
-             (lambda (s r)
-               (if (null? s)
-                   r
-                   (run (cdr s)
-                     (cons (car s) r))))))
-    (lambda (s)
-      (run s '()))))
-
-(define append
-  (letrec ((run-1
-             (lambda (s1 sr)
-               (if (null? sr)
-                   s1
-                   (run-2 s1
-                     (run-1 (car sr)
-                       (cdr sr))))))
-           (run-2
-             (lambda (s1 s2)
-               (if (null? s1)
-                   s2
-                   (cons (car s1)
-                     (run-2 (cdr s1) s2))))))
-    (lambda s
-      (if (null? s)
-          '()
-          (run-1 (car s)
-            (cdr s))))))
-
-(define fold-left
-  (letrec ((run
-             (lambda (f unit ss)
-               (if (ormap null? ss)
-                   unit
-                   (run f
-                     (apply f unit (map car ss))
-                     (map cdr ss))))))
-    (lambda (f unit . ss)
-      (run f unit ss))))
-
-
-(define fold-right
-  (letrec ((run
-             (lambda (f unit ss)
-               (if (ormap null? ss)
-                   unit
-                   (apply f
-                     `(,@(map car ss)
-                       ,(run f unit (map cdr ss))))))))
-    (lambda (f unit . ss)
-      (run f unit ss))))
-
-; (define +
-;   (let* ((error (lambda () (error '+ "all arguments need to be numbers")))
-;          (bin+
-;            (lambda (a b)
-;              (cond ((rational? a)
-;                     (cond ((rational? b) (__bin-add-qq a b))
-;                           ((real? b) (__bin-add-rr (rational->real a) b))
-;                           (else (error))))
-;                    ((real? a)
-;                     (cond ((rational? b) (__bin-add-rr a (rational->real b)))
-;                           ((real? b) (__bin-add-rr a b))
-;                           (else (error))))
-;                    (else (error))))))
-;     (lambda (s) (fold-left bin+ 0 s))))
+(define fact
+  (lambda (n)
+    (if (zero? n)
+        1
+        (bin* n (fact (- n 1))))))

@@ -468,17 +468,23 @@ class TestLet(CompilerTestCase):
         
 
     def test_letrec(self):
-        letExp = "(letrec ((x 2) (y x)) y)"
+        letRecExp = "(letrec ((x 2)) x)"
+        letRecRes = module.nt_sexpr(letRecExp, 0)
+ 
+        letExp = "(let ((x 'whatever)) (set! x 2) x)"
         letRes = module.nt_sexpr(letExp, 0)
 
 
+        parsedLetRec = module.tag_parse(letRecRes.found)
         parsedLet = module.tag_parse(letRes.found)
 
         
-        debugLet = False; 
+        debugLet = True; 
         if (debugLet):
-            print(f"let res:    {letRes.found}")
-            print(f"let parsed:    {parsedLet}")
+            print("\nיוצמ:")
+            print(f"parsed let rec:    \n{parsedLetRec}\n")
+            print("יוצר:")
+            print(f"parsed let:    \n{parsedLet}\n")
             print("")
 
 class TestRemoveDuplicates(CompilerTestCase):
