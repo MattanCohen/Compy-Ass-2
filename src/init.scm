@@ -56,6 +56,20 @@
                           (else (throw-error))))
                    (else (throw-error)))))
 
+(define list+
+  (lambda (s)
+    (if (null? s) 0
+        (bin+ (car s) (list+ (cdr s)))
+    )
+  )
+)
+
+(define + 
+  (lambda s
+    (list+ s)
+  )
+)
+
 (define bin-
            (lambda (a b)
              (cond ((rational? a)
@@ -68,6 +82,21 @@
                           (else (throw-error))))
                    (else (throw-error)))))
 
+(define list-
+  (lambda (s)
+    (if (null? s) 0
+        (bin- (car s) (list+ (cdr s)))
+    )
+  )
+)
+
+(define -
+  (lambda s
+    (list- s)
+  )
+)
+
+
 (define bin*
            (lambda (a b)
              (cond ((rational? a)
@@ -79,6 +108,19 @@
                           ((real? b) (__bin-mul-rr a b))
                           (else (throw-error))))
                    (else (throw-error)))))
+(define list*
+  (lambda (s)
+    (if (null? s) 1
+        (bin* (car s) (list* (cdr s)))
+    )
+  )
+)
+
+(define * 
+  (lambda s
+    (list* s)
+  )
+)
 
 (define bin/
            (lambda (a b)
@@ -91,6 +133,20 @@
                           ((real? b) (__bin-div-rr a b))
                           (else (throw-error))))
                    (else (throw-error)))))
+
+(define list/
+  (lambda (s)
+    (if (null? s) 1
+        (bin/ (car s) (list* (cdr s)))
+    )
+  )
+)
+
+(define /
+  (lambda s
+    (list/ s)
+  )
+)
 
 (define fact
   (lambda (n)
