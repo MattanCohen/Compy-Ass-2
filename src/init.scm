@@ -153,3 +153,39 @@
     (if (zero? n)
         1
         (bin* n (fact (- n 1))))))
+
+
+(define apply __bin-apply)
+
+(define ormap-list
+  (lambda (f s)
+    (if (null? s) #f
+      (if (car s) (car s)
+        (ormap-list f (cdr s))
+      )
+    )
+  )
+)
+
+(define ormap
+  (lambda (f . s)
+    (ormap-list f s) 
+  )
+)
+
+
+(define andmap-list
+  (lambda (f s)
+    (if (null? s) #t
+      (if (not (car s)) (car s)
+        (andmap-list f (cdr s))
+      )
+    )
+  )
+)
+
+(define andmap
+  (lambda (f . s)
+    (andmap-list f s) 
+  )
+)
