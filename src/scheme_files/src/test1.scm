@@ -1,22 +1,37 @@
-
 (define lambda-variadic ((lambda a (quasiquote (variadic lambda on list ,@a))) 1 2))
+
 (define lambda-opt ((lambda (a . b) (quasiquote (lambda opt arg ,a rest ,@b))) 6 9))
-(define plus ((lambda (a b) (quasiquote (performing ,a + ,b result is ,(bin+ a b)))) 5 4))
 
-; an example of the most simplest recursion function ever that doesnt work
-; (define fact-example ((lambda (n) (if (zero? n) 1 (bin* n (fact-example (bin- n 1))))) 3))
+(define plus ((lambda (a b) (quasiquote (binary plus performing ,a + ,b result is ,(bin+ a b)))) 5 4))
 
-(let ((space '___space___))
-(quasiquote (
-    ,lambda-variadic ,space
-    ,lambda-opt ,space
-    ,plus
-    )))
+(define set-example (let ((x 2)) (begin (set! x 3) (quasiquote (set bang x was 2 set to ,x)))))    
+(define set-example-in-lambda (lambda () (define nadav 0) (set! nadav (quasiquote (set bang in lambda works))) nadav))
 
-; `((lambda-variadic 1 2 3 4))
+(define sprint-list (lambda (l) (if (null? l) (quasiquote (letrec macro expansion works)) (sprint-list (cdr l)))))  
+(define letrec-no-let (sprint-list '(1 2 3)))
+
+(define fact (lambda (n) (if (zero? n) 1 (bin* n (fact (bin- n 1))))))
+(define fact-example (quasiquote (fact of 3 ,(fact 3))))
+
+(let ((should-test #f)
+    (divider '_____________________________________________________________________________________________________________________________________________) (space '______))
+(if (not should-test)   
+        '()
+        (quasiquote (
+            ,divider
+            ,lambda-variadic ,space
+            ,lambda-opt ,space
+            ,plus ,space
+            ,fact-example ,space
+            ,set-example ,space
+            ,(set-example-in-lambda) ,space
+            ,letrec-no-let
+            )))
+)
 
 
-; (bin* 1 0)
-; (bin+ 2 4)
-; (bin- 15 6)
-; (bin/ 0 1)
+
+; ******    letrec recursions don't work
+(define letrec-example (lambda ()  
+    (letrec ((sprint-list (lambda (l) (if (null? l) (quasiquote (letrec works)) (sprint-list (cdr l)))))) (sprint-list '(1 2 3)))))
+(letrec-example) ; supposed to print "letrec works" but instead throws exception  *********
