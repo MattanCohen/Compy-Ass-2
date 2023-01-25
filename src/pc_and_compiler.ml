@@ -6,7 +6,7 @@
 
 (* general list-processing procedures *)
 
-let debug_flag = true;;
+let debug_flag = false;;
 let debug str = if debug_flag then print_endline (Printf.sprintf "DEBUG: %s" str) else ();;
 let list_of_string string =
   let rec run i s =
